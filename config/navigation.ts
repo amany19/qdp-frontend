@@ -38,6 +38,7 @@ export const navItems = {
     href: '/appointments',
     label: 'مواعيدي',
     icon: '/icons/calender-icon.svg',
+    activeIcon: '/icons/calendar-icon-bold.svg',
   },
   services:{
     href: '/services',

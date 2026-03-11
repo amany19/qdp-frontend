@@ -4,10 +4,16 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 
+/** Derives the bold icon path from the regular icon (e.g. /icons/home-icon.svg → /icons/home-icon-bold.svg) */
+function getBoldIconPath(iconPath: string): string {
+  return iconPath.replace(/(\.\w+)$/, '-bold$1');
+}
+
 export interface NavItem {
   href: string;
   label: string;
   icon: string;
+  /** Optional. If omitted, active state uses icon-bold from the same folder. */
   activeIcon?: string;
 }
 
@@ -45,7 +51,9 @@ export function BottomNavigationPlus({
 
   const renderNavItem = (item: NavItem) => {
     const active = isActive(item.href);
-    const iconSrc = active && item.activeIcon ? item.activeIcon : item.icon;
+    const iconSrc = active
+      ? (item.activeIcon ?? getBoldIconPath(item.icon))
+      : item.icon;
 
     return (
       <Link
@@ -59,13 +67,8 @@ export function BottomNavigationPlus({
             alt={item.label}
             width={24}
             height={24}
-            className={`w-full h-full object-contain transition-all ${
-              active && !item.activeIcon ? 'brightness-0' : ''
-            }`}
-            style={{ 
-              opacity: active ? 1 : 0.6,
-              filter: active && !item.activeIcon ? 'brightness(0)' : 'none'
-            }}
+            className="w-full h-full object-contain transition-all"
+            style={{ opacity: active ? 1 : 0.6 }}
           />
         </div>
         <span
