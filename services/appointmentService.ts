@@ -3,7 +3,7 @@ import { api } from './api';
 export interface Appointment {
   _id: string;
   userId: string;
-  propertyId: {
+  propertyId?: {
     _id: string;
     title: string;
     titleAr?: string;
@@ -15,13 +15,25 @@ export interface Appointment {
     images?: Array<{ url: string; isCover?: boolean }>;
     price?: number;
   } | null;
+  applianceBookingId?: {
+    _id: string;
+    timeSlot: string;
+    startDate: string;
+    applianceId?: {
+      _id: string;
+      nameEn?: string;
+      nameAr?: string;
+      brand?: string;
+      model?: string;
+    };
+  };
   agentId?: {
     _id: string;
     fullName: string;
     phone: string;
     email: string;
   };
-  appointmentType: 'viewing' | 'delivery';
+  appointmentType: 'viewing' | 'delivery' | 'appliance_delivery';
   date: Date | string;
   time: string;
   status: 'confirmed' | 'received' | 'in_progress' | 'agent' | 'unconfirmed';

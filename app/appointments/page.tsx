@@ -67,7 +67,9 @@ export default function AppointmentsPage() {
   };
 
   const getAppointmentTypeText = (type: string): string => {
-    return type === 'viewing' ? 'معاينة' : 'تسليم';
+    if (type === 'viewing') return 'معاينة';
+    if (type === 'appliance_delivery') return 'تسليم جهاز';
+    return 'تسليم';
   };
 
   if (isLoading) {
@@ -151,7 +153,62 @@ export default function AppointmentsPage() {
           ) : (
             <div className="space-y-3">
               {appointments.map((appointment) => {
+                const isApplianceDelivery = appointment.appointmentType === 'appliance_delivery';
+                const applianceBooking = appointment.applianceBookingId;
                 const property = appointment.propertyId;
+
+                // Appliance delivery card
+                if (isApplianceDelivery && applianceBooking) {
+                  const appliance = applianceBooking.applianceId;
+                  const title = appliance?.nameAr || appliance?.nameEn || appliance?.model || 'جهاز';
+                  return (
+                    <div
+                      key={appointment._id}
+                      className="bg-white border border-gray-200 rounded-xl p-4 space-y-3"
+                    >
+                      <h3 className="font-bold text-base text-gray-900">
+                        {title}
+                        {appliance?.brand && ` - ${appliance.brand}`}
+                      </h3>
+                      <div className="flex items-center gap-2 text-gray-600 text-sm">
+                        <MapPin className="w-4 h-4" />
+                        <span>موعد تسليم الجهاز</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-700 text-sm">
+                        <Calendar className="w-4 h-4" />
+                        <span>
+                          {new Date(appointment.date).toLocaleDateString('ar-QA', {
+                            day: 'numeric',
+                            month: 'long',
+                          })}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-700 text-sm">
+                        <Clock className="w-4 h-4" />
+                        <span>{appointment.time || '—'}</span>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <StatusBadge
+                          variant={getStatusBadgeVariant(appointment.status)}
+                          label={getStatusText(appointment.status)}
+                        />
+                        <StatusBadge
+                          variant="agent"
+                          label={getAppointmentTypeText(appointment.appointmentType)}
+                          showIcon={false}
+                        />
+                      </div>
+                      <button
+                        onClick={() => router.push(`/appointments/${appointment._id}`)}
+                        className="text-sm text-gray-900 underline hover:text-gray-700"
+                      >
+                        عرض التفاصيل
+                      </button>
+                    </div>
+                  );
+                }
+
+                // Property-based (viewing / delivery) card
                 if (!property) return null;
 
                 return (
@@ -159,24 +216,17 @@ export default function AppointmentsPage() {
                     key={appointment._id}
                     className="bg-white border border-gray-200 rounded-xl p-4 space-y-3"
                   >
-                    {/* Property Name */}
                     <h3 className="font-bold text-base text-gray-900">
                       {property.title || property.titleAr || 'إليت هوم'}
                     </h3>
-
-                    {/* Location */}
                     <div className="flex items-center gap-2 text-gray-600 text-sm">
                       <MapPin className="w-4 h-4" />
                       <span>{property.location?.city || 'الدوحة'}، {property.location?.country || 'قطر'}</span>
                     </div>
-
-                    {/* Unit Number */}
                     <div className="flex items-center gap-2 text-gray-700 text-sm">
                       <Building className="w-4 h-4" />
                       <span>وحدة رقم {property._id?.slice(-4) || '2048'}</span>
                     </div>
-
-                    {/* Date */}
                     <div className="flex items-center gap-2 text-gray-700 text-sm">
                       <Calendar className="w-4 h-4" />
                       <span>
@@ -186,14 +236,10 @@ export default function AppointmentsPage() {
                         })}
                       </span>
                     </div>
-
-                    {/* Time */}
                     <div className="flex items-center gap-2 text-gray-700 text-sm">
                       <Clock className="w-4 h-4" />
                       <span>{appointment.time || '4:00 م'}</span>
                     </div>
-
-                    {/* Status and Type Badges */}
                     <div className="flex items-center gap-2 flex-wrap">
                       <StatusBadge
                         variant={getStatusBadgeVariant(appointment.status)}
@@ -205,8 +251,6 @@ export default function AppointmentsPage() {
                         showIcon={false}
                       />
                     </div>
-
-                    {/* View Details Link */}
                     <button
                       onClick={() => router.push(`/appointments/${appointment._id}`)}
                       className="text-sm text-gray-900 underline hover:text-gray-700"

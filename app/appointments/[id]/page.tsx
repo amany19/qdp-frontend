@@ -37,24 +37,36 @@ function normalizeAppointment(data: unknown): Appointment {
   const source = (data as any).data || data;
 
   try {
+    const isApplianceDelivery = source?.appointmentType === 'appliance_delivery';
+    const appliance = source?.applianceBookingId?.applianceId;
+    const applianceTitle = appliance
+      ? (appliance.nameAr || appliance.nameEn || appliance.model || 'جهاز') +
+        (appliance.brand ? ` - ${appliance.brand}` : '')
+      : 'تسليم جهاز';
+
     const appointment: Appointment = {
       id: String(source?._id || source?.id || ""),
+      type: source?.appointmentType,
 
-      propertyName:
-        source?.propertyId?.title ||
-        source?.title ||
-        "Unknown Property",
+      propertyName: isApplianceDelivery
+        ? applianceTitle
+        : source?.propertyId?.title ||
+          source?.title ||
+          "Unknown Property",
 
-      city:
-        source?.propertyId?.location?.city ||
-        source?.location?.address ||
-        "Unknown City",
+      city: isApplianceDelivery
+        ? "موعد تسليم الجهاز"
+        : source?.propertyId?.location?.city ||
+          source?.location?.address ||
+          "Unknown City",
 
-      price: Number(
-        source?.propertyId?.availableFor?.rentPrice ||
-        source?.propertyId?.price ||
-        0
-      ),
+      price: isApplianceDelivery
+        ? 0
+        : Number(
+            source?.propertyId?.availableFor?.rentPrice ||
+              source?.propertyId?.price ||
+              0
+          ),
 
       status: String(
         source?.status || source?.appointmentStatus || "pending"
@@ -127,10 +139,14 @@ export default function AppointmentDetails() {
   // Normalize the data to match Appointment type
   const appointment = normalizeAppointment(rawData);
 
-  // Validate if we have meaningful data
-  const hasValidData = appointment.propertyName !== 'Unknown Property' &&
-    appointment.city !== 'Unknown City' &&
-    appointment.price > 0;
+  // Validate if we have meaningful data (include appliance_delivery from raw)
+  const raw = (rawData as any)?.data ?? rawData;
+  const isApplianceDelivery = raw?.appointmentType === 'appliance_delivery';
+  const hasValidData =
+    appointment.id &&
+    (isApplianceDelivery ||
+      (appointment.propertyName !== 'Unknown Property' &&
+        appointment.city !== 'Unknown City'));
 
   // Guard: no id in URL
   if (!id) {
@@ -209,11 +225,13 @@ export default function AppointmentDetails() {
       </div>
 
       <div className="p-5 space-y-4">
-        {/* Property Card */}
+        {/* Property / Appliance Card */}
         <div className="bg-white border border-gray-200 shadow-sm rounded-2xl px-3  py-4 space-y-3">
           <div className="flex justify-between items-center gap-2">
             <h2 className="font-bold text-md">{appointment.propertyName}</h2>
-            <button className="border px-3 py-1 rounded-lg text-sm bg-white">معاينة</button>
+            {appointment.type !== 'appliance_delivery' && (
+              <button className="border px-3 py-1 rounded-lg text-sm bg-white">معاينة</button>
+            )}
           </div>
           <div className="flex justify-start items-center gap-2">
             <div className="flex justify-end items-center gap-2 text-gray-500 text-sm">
@@ -222,13 +240,16 @@ export default function AppointmentDetails() {
             </div>
           </div>
           <div className="flex flex-col justify-end items-end">
-            <span>
-              <span className="text-lg font-bold text-gray-900">
-                {appointment.price.toLocaleString()}
+            {appointment.type !== 'appliance_delivery' && (
+              <span>
+                <span className="text-lg font-bold text-gray-900">
+                  {appointment.price.toLocaleString()}
+                </span>
+                <span className="text-sm text-[#000]">
+                  ر.ق/شهر
+                </span>
               </span>
-              <span className="text-sm text-[#000]">
-                ر.ق/شهر
-              </span> </span>
+            )}
             {appointment.status && (
               <div
                 className={`px-3 py-1 rounded-lg text-sm flex items-center gap-1 ${appointment.status === "confirmed"

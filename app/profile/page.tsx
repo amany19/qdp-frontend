@@ -20,6 +20,7 @@ import AccountTab from './components/tabs/AccountTab';
 import UnitsTab from './components/tabs/UnitsTab';
 import AdsTab from './components/tabs/AdsTab';
 import OffersTab from './components/tabs/OffersTab';
+import AppointmentsTab from './components/tabs/AppointmentsTab';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -53,10 +54,11 @@ export default function ProfilePage() {
       return;
     }
 
-    // Load data based on active tab
-    if (activeTab === 'units') {
+    // Load contracts on mount (for "pending owner signature" card) and when units tab is selected
+    if (activeTab === 'units' || contracts.length === 0) {
       loadContracts();
-    } else if (activeTab === 'ads') {
+    }
+    if (settings.showMyAdsTab && userType !== 'resident' && activeTab === 'ads') {
       loadMyAds();
     }
   }, [activeTab, isAuthenticated, router]);
@@ -100,7 +102,8 @@ export default function ProfilePage() {
   const tabs = [
     { id: 'account' as TabType, label: 'حسابي', show: true },
     { id: 'units' as TabType, label: 'وحدتي', show: userType === 'resident' },
-    { id: 'ads' as TabType, label: 'إعلاناتي', show: settings.showMyAdsTab },
+    { id: 'appointments' as TabType, label: 'مواعيدي', show: userType === 'resident' },
+    { id: 'ads' as TabType, label: 'إعلاناتي', show: settings.showMyAdsTab && userType !== 'resident' },
   ].filter(tab => tab.show);
 
   return (
@@ -177,18 +180,48 @@ export default function ProfilePage() {
         {/* Tab Content */}
         <div className="px-5 py-6">
           {activeTab === 'account' && (
-            <AccountTab user={user} onLogout={handleLogout} />
+            <>
+              {(() => {
+                const currentUserId = authUser?.id;
+                type ContractWithParties = Contract & { tenantId?: { _id: string } | string; electronicSignatureLandlord?: string; signedAtLandlord?: string };
+                const pendingOwnerSignature = (contracts || []).filter((c) => {
+                  const contract = c as ContractWithParties;
+                  if (contract.status !== 'pending_signature') return false;
+                  const tenantId = typeof contract.tenantId === 'object' && contract.tenantId !== null && '_id' in contract.tenantId
+                    ? (contract.tenantId as { _id: string })._id
+                    : String(contract.tenantId ?? '');
+                  const landlordSigned = !!(contract.electronicSignatureLandlord && contract.signedAtLandlord);
+                  return tenantId === currentUserId && !landlordSigned;
+                });
+                return pendingOwnerSignature.length > 0 ? (
+                  <div className="mb-4">
+                    <button
+                      onClick={() => router.push('/contract/pending')}
+                      className="w-full text-right bg-amber-50 border border-amber-200 rounded-xl p-4 hover:bg-amber-100 transition-colors"
+                    >
+                      <p className="text-amber-800 font-medium">عقدك بانتظار توقيع المالك</p>
+                      <p className="text-amber-700 text-sm mt-1">اضغط لعرض التفاصيل والمتابعة</p>
+                    </button>
+                  </div>
+                ) : null;
+              })()}
+              <AccountTab user={user} onLogout={handleLogout} />
+            </>
           )}
           
           {activeTab === 'units' && (
             <UnitsTab contracts={contracts} loading={loading} userType={userType} />
+          )}
+
+          {activeTab === 'appointments' && (
+            <AppointmentsTab />
           )}
           
           {activeTab === 'offers' && (
             <OffersTab />
           )}
 
-          {settings.showMyAdsTab && activeTab === 'ads' && (
+          {settings.showMyAdsTab && userType !== 'resident' && activeTab === 'ads' && (
             <AdsTab ads={myAds} loading={loading} />
           )}
         </div>

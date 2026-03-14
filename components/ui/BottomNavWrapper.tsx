@@ -28,8 +28,11 @@ export function BottomNavWrapper() {
     pathname?.startsWith('/services/') ||
     pathname?.startsWith('/offers') ||
     pathname?.startsWith('/my-transfers') ||
-    pathname?.startsWith('/profile/settings');
-    pathname?.startsWith('/bookings/');
+    pathname?.startsWith('/profile/settings')||
+    pathname?.startsWith('/bookings/')||
+    pathname?.startsWith('/nearby')||
+    pathname?.startsWith('/appliances/')||
+    pathname?.startsWith('/property/booking/');
 
   if (hideBottomNav) {
     return null;

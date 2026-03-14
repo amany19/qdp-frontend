@@ -49,4 +49,4 @@ export interface PropertyListing {
   createdAt: string;
 }
 
-export type TabType = 'account' | 'units' | 'ads' | 'offers';
+export type TabType = 'account' | 'units' | 'ads' | 'offers' | 'appointments';

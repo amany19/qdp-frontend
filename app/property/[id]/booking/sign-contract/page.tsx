@@ -164,9 +164,9 @@ function SignContractContent() {
         signerRole: 'tenant' as const, // Current user is the tenant/buyer
       };
 
-      await contractService.sign(contract._id, signatureData);
+      const updatedContract = await contractService.sign(contract._id, signatureData);
 
-      // Refetch profile so auth store gets userType 'resident' (backend sets it when tenant signs)
+      // Refetch profile so auth store has current userType (resident only when both parties have signed)
       try {
         const token = localStorage.getItem('accessToken');
         const profileRes = await fetch(`${API_BASE_URL}/users/profile`, {
@@ -180,10 +180,13 @@ function SignContractContent() {
         // non-blocking
       }
 
-      toast.success('تم توقيع العقد بنجاح!');
-
-      // Navigate to payment screen
-      router.push(`/property/booking/checkout?contractId=${contract._id}`);
+      if (updatedContract?.status === 'active') {
+        toast.success('تم توقيع العقد بنجاح!');
+        router.push(`/property/${propertyId || ''}/booking/checkout?contractId=${contract._id}`);
+      } else {
+        toast.success('تم تسجيل توقيعك. العقد بانتظار توقيع المالك.');
+        router.push('/contract/pending');
+      }
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       toast.error(err.response?.data?.message || 'فشل في توقيع العقد');

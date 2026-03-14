@@ -75,11 +75,12 @@ function SignContractContent() {
       // For now, using a placeholder signature
       const signatureData = {
         signature: 'electronic_signature_placeholder',
+        signerRole: 'tenant' as const,
       };
 
-      await contractService.sign(contract._id, signatureData);
+      const updatedContract = await contractService.sign(contract._id, signatureData);
 
-      // Refetch profile so auth store gets userType 'resident' (backend sets it when tenant signs)
+      // Refetch profile (userType becomes resident only when both parties have signed)
       try {
         const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
         if (token) {
@@ -95,10 +96,13 @@ function SignContractContent() {
         // non-blocking
       }
 
-      toast.success('Contract signed successfully!');
-
-      // Navigate to payment screen
-      router.push(`/property/booking/checkout?contractId=${contract._id}`);
+      if (updatedContract?.status === 'active') {
+        toast.success('Contract signed successfully!');
+        router.push(`/property/booking/checkout?contractId=${contract._id}`);
+      } else {
+        toast.success('تم تسجيل توقيعك. العقد بانتظار توقيع المالك.');
+        router.push('/contract/pending');
+      }
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       toast.error(err.response?.data?.message || 'Failed to sign contract');
