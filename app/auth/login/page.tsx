@@ -47,7 +47,8 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const callingCode = getCountryCallingCode(countryCode as any);
-      const fullPhoneNumber = `+${callingCode}${phoneNumber}`;
+      const digitsOnly = (phoneNumber || '').replace(/\D/g, '');
+      const fullPhoneNumber = `+${callingCode}${digitsOnly}`;
 
       const response = await authService.login({
         phone: fullPhoneNumber,

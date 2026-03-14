@@ -27,7 +27,9 @@ export function BottomNavWrapper() {
     pathname?.startsWith('/contract') ||
     pathname?.startsWith('/services/') ||
     pathname?.startsWith('/offers') ||
+    pathname?.startsWith('/my-transfers') ||
     pathname?.startsWith('/profile/settings');
+    pathname?.startsWith('/bookings/');
 
   if (hideBottomNav) {
     return null;

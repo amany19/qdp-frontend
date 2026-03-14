@@ -41,7 +41,9 @@ interface PropertyBooking {
 }
 
 export default function BookingDetailsPage() {
-  const { token } = useAuthStore();
+  const { token, user: authUser } = useAuthStore();
+  const userType = authUser?.userType;
+  const isResident = userType === 'resident';
   const router = useRouter();
   const params = useParams();
   const bookingId = params.id as string;
@@ -115,10 +117,10 @@ export default function BookingDetailsPage() {
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">لم يتم العثور على الحجز</h2>
           <button
-            onClick={() => router.push('/my-bookings')}
+            onClick={() => router.push(isResident ? '/my-unit' : '/my-bookings')}
             className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800"
           >
-            العودة للحجوزات
+            {isResident ? 'العودة لوحدتي' : 'العودة للحجوزات'}
           </button>
         </div>
       </div>
@@ -130,12 +132,14 @@ export default function BookingDetailsPage() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">تفاصيل الحجز</h1>
+          <h1 className="text-3xl font-bold text-gray-900">
+            {isResident ? 'تفاصيل الدفع والأقساط' : 'تفاصيل الحجز'}
+          </h1>
           <button
-            onClick={() => router.push('/my-bookings')}
-            className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+            onClick={() => router.push(isResident ? '/my-unit' : '/my-bookings')}
+            className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 flex items-center gap-1"
           >
-            العودة للحجوزات
+            {isResident ? 'العودة لوحدتي' : 'العودة لحجوزاتي'}
           </button>
         </div>
 
@@ -252,6 +256,23 @@ export default function BookingDetailsPage() {
                         {booking.numberOfInstallments || 0} شهر
                       </span>
                     </div>
+                    {(() => {
+                      const unpaidInstallments = booking.installments?.filter(
+                        (i) => i.status !== 'paid' && i.status !== 'cancelled'
+                      ) ?? [];
+                      const remainingBalance = unpaidInstallments.reduce(
+                        (sum, i) => sum + (i.amount ?? 0),
+                        0
+                      );
+                      return remainingBalance > 0 ? (
+                        <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+                          <span className="text-gray-600">المبلغ المتبقي</span>
+                          <span className="font-bold text-amber-700">
+                            {remainingBalance.toLocaleString()} ر.ق
+                          </span>
+                        </div>
+                      ) : null;
+                    })()}
                     {booking.insuranceDeposit && (
                       <div className="flex justify-between items-center">
                         <span className="text-gray-600">مبلغ التأمين</span>

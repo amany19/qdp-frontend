@@ -76,7 +76,7 @@ export default function HomePage() {
 
                   {/* Warning Text */}
                   <p className="text-xs text-gray-700 flex-1">
-                    منتهي، تبقى شهر على إنتهاء عقد الايجار{' '}
+                    متبقي شهر على انتهاء عقد ايجارك{' '}
                     <span
                       className="text-[#C83636] font-bold underline cursor-pointer"
                       onClick={() => router.push('/contract/renew')}

@@ -40,7 +40,13 @@ export const navItems = {
     icon: '/icons/calender-icon.svg',
     activeIcon: '/icons/calendar-icon-bold.svg',
   },
-  services:{
+  myUnit: {
+    href: '/my-unit',
+    label: 'وحدتي',
+    icon: '/icons/building-icon.svg',
+    activeIcon: '/icons/building-icon-bold.svg',
+  },
+  services: {
     href: '/services',
     label: 'خدماتي',
     icon: '/icons/briefcase-icon.svg',
@@ -60,7 +66,7 @@ export const navConfigs = {
   },
   resident: {
     leftNavItems: [navItems.home, navItems.services] as NavItem[],
-    rightNavItems: [navItems.appointments, navItems.profile] as NavItem[],
+    rightNavItems: [navItems.myUnit, navItems.profile] as NavItem[],
   },
   user: {
     leftNavItems: [navItems.home, navItems.properties] as NavItem[],

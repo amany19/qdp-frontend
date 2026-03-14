@@ -156,7 +156,7 @@ export default function ServicesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50" dir="rtl">
+    <div className="min-h-screen mb-8 bg-gray-50" dir="rtl">
       {/* Header */}
         <HeaderCard
           title="خدمات الصيانة"

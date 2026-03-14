@@ -6,8 +6,11 @@ import { useParams, useRouter } from 'next/navigation';
 import ds from '../../../../styles/adminDesignSystem';
 import { API_BASE_URL } from '@/lib/config';
 
+type TransferType = 'replace_tenant' | 'property_transfer' | 'ownership_transfer';
+
 interface TransferRequest {
   _id: string;
+  transferType?: TransferType;
   userId: {
     _id: string;
     fullName: string;
@@ -21,16 +24,18 @@ interface TransferRequest {
     images: Array<{ url: string; isCover: boolean }>;
     availableFor?: { rentPrice?: number };
   };
-  requestedPropertyId: {
+  requestedPropertyId?: {
     _id: string;
     title: string;
     location: { area: string; city: string };
     images: Array<{ url: string; isCover: boolean }>;
     availableFor?: { rentPrice?: number };
   };
+  newTenantInfo?: { fullName: string; phone: string; email: string; qatarId: string };
+  newOwnerInfo?: { fullName: string; phone: string; email: string; qatarId: string };
   reason: string;
   status: 'pending' | 'approved' | 'rejected';
-  eligibilityCheck: {
+  eligibilityCheck?: {
     similarUnitAvailable: boolean;
     noLatePayments: boolean;
     allInstallmentsPaid: boolean;
@@ -172,9 +177,10 @@ export default function AdminTransferDetailPage() {
   const currentPropertyImage = transfer.currentPropertyId?.images?.find(img => img.isCover) || transfer.currentPropertyId?.images?.[0];
   const requestedPropertyImage = transfer.requestedPropertyId?.images?.find(img => img.isCover) || transfer.requestedPropertyId?.images?.[0];
 
-  const allEligibilityMet = transfer.eligibilityCheck.similarUnitAvailable &&
-                              transfer.eligibilityCheck.noLatePayments &&
-                              transfer.eligibilityCheck.allInstallmentsPaid;
+  const allEligibilityMet = transfer.eligibilityCheck &&
+    transfer.eligibilityCheck.similarUnitAvailable &&
+    transfer.eligibilityCheck.noLatePayments &&
+    transfer.eligibilityCheck.allInstallmentsPaid;
 
   return (
     <div className="min-h-screen p-8" style={{ background: 'linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%)' }} dir="rtl">
@@ -193,6 +199,9 @@ export default function AdminTransferDetailPage() {
           <h1 className="text-3xl font-bold" style={{ color: ds.colors.primary.black }}>
             تفاصيل طلب النقل
           </h1>
+          <p className="text-sm text-gray-600 mt-1">
+            {transfer.transferType === 'replace_tenant' ? 'استبدال مستأجر' : transfer.transferType === 'ownership_transfer' ? 'نقل ملكية' : 'نقل إلى وحدة أخرى'}
+          </p>
         </div>
 
         {/* Status Badge */}
@@ -225,9 +234,11 @@ export default function AdminTransferDetailPage() {
             </div>
           </div>
 
-          {/* Property Comparison */}
+          {/* Property / New party */}
           <div style={ds.components.glassCard}>
-            <h3 className="text-xl font-bold mb-4">مقارنة العقارات</h3>
+            <h3 className="text-xl font-bold mb-4">
+              {transfer.transferType === 'property_transfer' ? 'مقارنة العقارات' : transfer.transferType === 'replace_tenant' ? 'المستأجر الحالي والعقار / المستأجر الجديد' : 'العقار والمالك الجديد'}
+            </h3>
             <div className="grid grid-cols-2 gap-6">
               {/* Current Property */}
               <div className="border-r border-gray-200 pr-4">
@@ -258,33 +269,59 @@ export default function AdminTransferDetailPage() {
                 </button>
               </div>
 
-              {/* Requested Property */}
+              {/* Requested Property OR New Tenant OR New Owner */}
               <div className="pl-4">
-                <h4 className="font-semibold text-sm text-gray-600 mb-3">العقار المطلوب</h4>
-                <div className="relative w-full h-32 rounded-lg overflow-hidden mb-3">
-                  {requestedPropertyImage ? (
-                    <img src={requestedPropertyImage.url} alt={transfer.requestedPropertyId?.title} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                      <span className="text-gray-400 text-xs">لا صورة</span>
+                {transfer.transferType === 'property_transfer' && transfer.requestedPropertyId && (
+                  <>
+                    <h4 className="font-semibold text-sm text-gray-600 mb-3">العقار المطلوب</h4>
+                    <div className="relative w-full h-32 rounded-lg overflow-hidden mb-3">
+                      {requestedPropertyImage ? (
+                        <img src={requestedPropertyImage.url} alt={transfer.requestedPropertyId?.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                          <span className="text-gray-400 text-xs">لا صورة</span>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-                <p className="font-bold mb-1">{transfer.requestedPropertyId?.title || 'N/A'}</p>
-                <p className="text-sm text-gray-600 mb-2">
-                  {transfer.requestedPropertyId?.location?.area}, {transfer.requestedPropertyId?.location?.city}
-                </p>
-                {transfer.requestedPropertyId?.availableFor?.rentPrice && (
-                  <p className="text-lg font-bold text-green-600">
-                    {transfer.requestedPropertyId.availableFor.rentPrice.toLocaleString()} ر.ق/شهر
-                  </p>
+                    <p className="font-bold mb-1">{transfer.requestedPropertyId?.title || 'N/A'}</p>
+                    <p className="text-sm text-gray-600 mb-2">
+                      {transfer.requestedPropertyId?.location?.area}, {transfer.requestedPropertyId?.location?.city}
+                    </p>
+                    {transfer.requestedPropertyId?.availableFor?.rentPrice && (
+                      <p className="text-lg font-bold text-green-600">
+                        {transfer.requestedPropertyId.availableFor.rentPrice.toLocaleString()} ر.ق/شهر
+                      </p>
+                    )}
+                    <button
+                      onClick={() => router.push(`/admin/properties/${transfer.requestedPropertyId?._id}`)}
+                      className="text-xs text-blue-500 hover:underline mt-2"
+                    >
+                      عرض التفاصيل →
+                    </button>
+                  </>
                 )}
-                <button
-                  onClick={() => router.push(`/admin/properties/${transfer.requestedPropertyId?._id}`)}
-                  className="text-xs text-blue-500 hover:underline mt-2"
-                >
-                  عرض التفاصيل →
-                </button>
+                {(transfer.transferType === 'replace_tenant' && transfer.newTenantInfo) && (
+                  <>
+                    <h4 className="font-semibold text-sm text-gray-600 mb-3">المستأجر الجديد</h4>
+                    <div className="space-y-2">
+                      <p className="font-bold">{transfer.newTenantInfo.fullName}</p>
+                      <p className="text-sm text-gray-600">{transfer.newTenantInfo.phone}</p>
+                      <p className="text-sm text-gray-600">{transfer.newTenantInfo.email}</p>
+                      <p className="text-xs text-gray-500">هوية: {transfer.newTenantInfo.qatarId}</p>
+                    </div>
+                  </>
+                )}
+                {(transfer.transferType === 'ownership_transfer' && transfer.newOwnerInfo) && (
+                  <>
+                    <h4 className="font-semibold text-sm text-gray-600 mb-3">المالك الجديد</h4>
+                    <div className="space-y-2">
+                      <p className="font-bold">{transfer.newOwnerInfo.fullName}</p>
+                      <p className="text-sm text-gray-600">{transfer.newOwnerInfo.phone}</p>
+                      <p className="text-sm text-gray-600">{transfer.newOwnerInfo.email}</p>
+                      <p className="text-xs text-gray-500">هوية: {transfer.newOwnerInfo.qatarId}</p>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -296,6 +333,7 @@ export default function AdminTransferDetailPage() {
           </div>
 
           {/* Eligibility Check */}
+          {transfer.eligibilityCheck && (
           <div style={ds.components.glassCard} className={allEligibilityMet ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}>
             <h3 className="text-xl font-bold mb-4">فحص الأهلية</h3>
 
@@ -346,6 +384,7 @@ export default function AdminTransferDetailPage() {
               </div>
             )}
           </div>
+          )}
 
           {/* Payment History */}
           {transfer.paymentHistory && transfer.paymentHistory.length > 0 && (

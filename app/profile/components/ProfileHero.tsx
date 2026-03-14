@@ -1,19 +1,21 @@
 import Image from 'next/image'
 import { MapPin } from 'lucide-react'
+import { getProfilePictureUrl } from '@/lib/profilePicture'
 
 export default function ProfileHero({ user }: any) {
+  const avatarUrl = getProfilePictureUrl(user?.profilePicture)
   return (
     <div className="bg-white px-5 py-6 border-b border-gray-100">
       <div className="flex items-center gap-4">
 
         <div className="w-16 h-16 rounded-full bg-gray-200 overflow-hidden">
-          {user?.profilePicture ? (
+          {avatarUrl ? (
             <Image
-              src={user.profilePicture}
-              alt={user.fullName}
+              src={avatarUrl}
+              alt={user?.fullName ?? ''}
               width={64}
               height={64}
-              className="object-cover"
+              className="object-cover w-full h-full"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center font-bold text-xl text-gray-500">

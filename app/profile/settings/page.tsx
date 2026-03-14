@@ -89,7 +89,7 @@ export default function SettingsPage() {
                 <SettingsHeader
                     name={user?.fullName || ''}
                     location="الدوحة، قطر" //Needs to be modified
-                    profilePicture={user?.profilePicture || '/images/default-avatar.png'}
+                    profilePicture={user?.profilePicture}
                     onEdit={() => router.push('/profile/settings')}
                 />
             )}

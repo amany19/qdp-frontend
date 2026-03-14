@@ -3,16 +3,20 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { Contract } from '@/types/profile';
-import { Gift, Calendar, Home, MapPin } from 'lucide-react';
+import { Calendar, Home, MapPin, FileText } from 'lucide-react';
 import ContractReminderCard from '../ContractReminderCard';
+import UnitFeaturesStrip from '@/components/ui/UnitFeaturesStrip';
+import CommitmentRewardCard from '@/components/ui/CommitmentRewardCard';
 
 interface UnitsTabProps {
   contracts: Contract[];
   loading: boolean;
+  userType?: string;
 }
 
-export default function UnitsTab({ contracts, loading }: UnitsTabProps) {
+export default function UnitsTab({ contracts, loading, userType }: UnitsTabProps) {
   const router = useRouter();
+  const isResident = userType === 'resident';
 
   if (loading) {
     return (
@@ -24,8 +28,15 @@ export default function UnitsTab({ contracts, loading }: UnitsTabProps) {
 
   if (contracts.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500">
-        <p>لا توجد عقود حتى الآن</p>
+      <div className="text-center py-12 space-y-4">
+        <p className="text-gray-500">لا توجد عقود حتى الآن</p>
+        <button
+          onClick={() => router.push(isResident ? '/my-unit' : '/my-bookings')}
+          className="inline-flex items-center gap-2 py-2.5 px-4 bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-800 font-medium transition-colors"
+        >
+          <FileText className="w-5 h-5" />
+          {isResident ? 'عرض وحدتي' : 'حجوزاتي والأقساط'}
+        </button>
       </div>
     );
   }
@@ -55,19 +66,32 @@ export default function UnitsTab({ contracts, loading }: UnitsTabProps) {
     <div className="space-y-6">
       {/* Contract Expiry Warning */}
       {true && (
-       <ContractReminderCard daysRemaining={15} contractId={contract._id}/>
+       <ContractReminderCard daysRemaining={15} contractId={contract._id} userType={userType} />
       )}
-
-      {/* Payment Due Section */}
-      {contract.contractType === 'rent' && (
-        <PaymentDueSection contractId={contract._id} />
-      )}
-
-      {/* Commitment Reward Section */}
-      <RewardSection paymentsOnTime={paymentsOnTime} totalPayments={totalPayments} />
+      {/* Commitment Reward - same styling as my-unit page */}
+      <CommitmentRewardCard paymentsOnTime={paymentsOnTime} totalPayments={totalPayments} />
 
       {/* Unit Details Section */}
       <UnitDetails contract={contract} />
+
+      {/* Link: residents go to وحدتي, normal users to حجوزاتي */}
+      <div className="pt-2 space-y-2">
+        <button
+          onClick={() => router.push(isResident ? '/my-unit' : '/my-bookings')}
+          className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-800 font-medium transition-colors"
+        >
+          <FileText className="w-5 h-5" />
+          {isResident ? 'عرض وحدتي' : 'حجوزاتي والأقساط'}
+        </button>
+        {isResident && (
+          <button
+            onClick={() => router.push('/my-transfers')}
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 border border-gray-200 hover:bg-gray-50 rounded-xl text-gray-700 font-medium transition-colors"
+          >
+            طلبات النقل والاستبدال
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -117,16 +141,16 @@ function ContractInfoRow({ label, value }: { label: string; value: string }) {
 }
 
 
-function PaymentDueSection({ contractId }: { contractId: string }) {
+function PaymentDueSection({ isResident }: { isResident: boolean }) {
   const router = useRouter();
-  
+
   return (
     <div>
       <h3 className="text-base font-bold text-gray-900 mb-3">
         الدفع خلال 15 يوم
       </h3>
       <button
-        onClick={() => router.push(`/contracts/${contractId}/pay`)}
+        onClick={() => router.push(isResident ? '/my-unit' : '/my-bookings')}
         className="bg-black text-white px-8 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
       >
         ادفع الآن
@@ -135,55 +159,23 @@ function PaymentDueSection({ contractId }: { contractId: string }) {
   );
 }
 
-function RewardSection({ paymentsOnTime, totalPayments }: { paymentsOnTime: number; totalPayments: number }) {
-  return (
-    <div className="space-y-3">
-      <div className="flex items-start gap-2">
-        <Gift className="w-5 h-5 text-gray-900 mt-0.5" />
-        <div>
-          <h3 className="text-base font-bold text-gray-900 mb-1">مكافأة الالتزام</h3>
-          <p className="text-sm text-gray-600 leading-relaxed">
-            استفيد بالدفع في موعده بن شهر تحصل على شهر مجاني عند التجديد
-          </p>
-        </div>
-      </div>
-
-      {/* Progress Indicator */}
-      <div>
-        <p className="text-sm text-gray-700 mb-2">
-          سددت {paymentsOnTime} من {totalPayments} دفعات في موعدها
-        </p>
-        <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden flex gap-0.5">
-          {[...Array(totalPayments)].map((_, i) => (
-            <div
-              key={i}
-              className={`flex-1 h-full ${i < paymentsOnTime
-                ? 'bg-gradient-to-r from-green-500 to-green-400'
-                : 'bg-gray-300'
-              }`}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function UnitDetails({ contract }: { contract: Contract }) {
+  const unitTitle = contract.propertyId.titleAr || contract.propertyId.title || 'وحدة رقم 2048';
+  const prop = contract.propertyId as { specifications?: { areaSqm?: number; bedrooms?: number; bathrooms?: number } };
+  const specs = prop?.specifications;
+
   return (
     <div>
       <h3 className="text-base font-bold text-gray-900 mb-3">تفاصيل الوحدة</h3>
 
       <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-4">
-        {/* Property Title */}
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-            <Home className="w-5 h-5 text-gray-600" />
-          </div>
-          <p className="text-base font-medium">
-            {contract.propertyId.titleAr || contract.propertyId.title || 'وحدة رقم 2048'}
-          </p>
-        </div>
+        <UnitFeaturesStrip
+          unitTitle={unitTitle}
+          kitchenLabel="1 مطبخ"
+          bathroomsLabel={specs?.bathrooms != null ? `${specs.bathrooms} حمام` : 'حمام'}
+          bedroomsLabel={specs?.bedrooms != null ? `${specs.bedrooms} غرف` : 'غرف'}
+          areaLabel={specs?.areaSqm != null ? `${specs.areaSqm} متر` : 'متر'}
+        />
 
         {/* Contract Details */}
         <div className="space-y-2 pt-3 border-t border-gray-100">

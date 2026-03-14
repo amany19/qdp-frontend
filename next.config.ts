@@ -18,6 +18,11 @@ const nextConfig: NextConfig = {
         pathname: '/uploads/**',
         port: '3001',
       },
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+        pathname: '/**',
+      },
     ],
   },
   eslint: {

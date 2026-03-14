@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { residentOffersService } from '@/services/residentOffersService';
-import type { ResidentOffer } from '@/types/residentOffer';
+import { getOfferPartnerName, type ResidentOffer } from '@/types/residentOffer';
 import RoleGuard from '@/components/auth/RoleGuard';
 import PageWrapper from '@/components/PageWrapper';
 import HeaderCard from '@/components/ui/HeaderCard';
@@ -74,7 +74,7 @@ export default function OffersPage() {
                             {offer.title}
                           </h2>
                           <p className="text-sm text-gray-500 mt-0.5">
-                            {offer.partner ? offer.partner.name : ''}
+                            {getOfferPartnerName(offer)}
                           </p>
                           <p className="text-sm text-amber-700 font-medium mt-1">
                             {offer.discountText}

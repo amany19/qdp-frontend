@@ -1,19 +1,12 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { useLocationStore } from '@/store/locationStore';
-import { nearbyService } from '@/services/nearbyService';
+import { nearbyService, type NearbyPlace } from '@/services/nearbyService';
 import { MapPin, ExternalLink, ArrowRight } from 'lucide-react';
 import HeaderCard from '@/components/ui/HeaderCard';
-
-type NearbyPlace = {
-  name: string;
-  type?: string;
-  lat: number;
-  lng: number;
-};
+import { BottomNavigation } from '@/components/ui/BottomNavigation';
 
 function getGoogleMapsUrl(lat: number, lng: number): string {
   return `https://www.google.com/maps?q=${lat},${lng}`;
@@ -40,15 +33,16 @@ function getFacilityStyle(type?: string) {
 
 const ALL_TAB = 'all';
 
-export default function NearbyFacilitiesPage() {
+export default function MyUnitNearbyPage() {
   const router = useRouter();
-  const { lat, lng, city } = useLocationStore();
+  const searchParams = useSearchParams();
+  const propertyId = searchParams.get('propertyId');
   const [activeTab, setActiveTab] = useState<string>(ALL_TAB);
 
   const { data: places = [], isLoading } = useQuery<NearbyPlace[]>({
-    queryKey: ['nearby', lat, lng],
-    queryFn: () => nearbyService.getNearby(lat!, lng!),
-    enabled: !!lat && !!lng,
+    queryKey: ['nearby-by-property', propertyId],
+    queryFn: () => nearbyService.getNearbyByProperty(propertyId!),
+    enabled: !!propertyId,
   });
 
   const tabs = useMemo(() => {
@@ -68,11 +62,11 @@ export default function NearbyFacilitiesPage() {
     return places.filter((p) => (p.type ?? '').toLowerCase() === activeTab);
   }, [places, activeTab]);
 
-  if (!lat || !lng) {
+  if (!propertyId) {
     return (
-      <div className="min-h-screen " dir="rtl">
+      <div className="min-h-screen bg-gray-50 pb-24" dir="rtl">
         <HeaderCard
-          title="الخدمات القريبة"
+          title="المرافق القريبة من وحدتي"
           leftButton={
             <button
               type="button"
@@ -85,17 +79,24 @@ export default function NearbyFacilitiesPage() {
           }
         />
         <div className="flex flex-col items-center justify-center flex-1 py-12 px-4">
-          <p className="text-gray-500 text-sm">يرجى تحديد الموقع أولاً</p>
+          <p className="text-gray-500 text-sm">لم يتم تحديد الوحدة. ارجع لوحدتي.</p>
+          <button
+            type="button"
+            onClick={() => router.push('/my-unit')}
+            className="mt-4 px-4 py-2 bg-gray-900 text-white rounded-xl text-sm font-medium"
+          >
+            وحدتي
+          </button>
         </div>
+        <BottomNavigation />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen pb-8" dir="rtl">
-      {/* Header - same HeaderCard as other pages, no notification icon */}
+    <div className="min-h-screen bg-gray-50 pb-24" dir="rtl">
       <HeaderCard
-        title="الخدمات القريبة"
+        title="المرافق القريبة من وحدتي"
         leftButton={
           <button
             type="button"
@@ -109,75 +110,72 @@ export default function NearbyFacilitiesPage() {
       />
 
       <div className="p-4 pt-2 min-h-screen bg-white">
-      {/* Tab filters - home-page compatible bordered badges */}
-      {!isLoading && places.length > 0 && (
-        <div className="flex flex-wrap gap-2 pb-3 mb-3">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+        <p className="text-xs text-gray-500 mb-3">حسب موقع وحدتك   </p>
+        {!isLoading && places.length > 0 && (
+          <div className="flex flex-wrap gap-2 pb-3 mb-3">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
                 className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all border ${activeTab === tab.id ? 'ring-2 ring-offset-2 ring-emerald-500' : ''} ${tab.tabClass}`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {isLoading ? (
-        <div className="flex justify-center py-12">
-          <p className="text-sm text-gray-500">جاري تحميل المرافق...</p>
-        </div>
-      ) : places.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 text-center">
-          <p className="text-gray-500 text-sm">لا توجد مرافق قريبة في نطاق البحث</p>
-        </div>
-      ) : filteredPlaces.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 text-center">
-          <p className="text-gray-500 text-sm">لا توجد نتائج لهذا النوع</p>
-        </div>
-      ) : (
-        <div className="grid gap-3">
-          {filteredPlaces.map((place, index) => {
-            const mapsUrl = getGoogleMapsUrl(place.lat, place.lng);
-            const style = getFacilityStyle(place.type);
-            return (
-              <a
-                key={`${place.lat}-${place.lng}-${index}`}
-                href={mapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block relative bg-white rounded-2xl border border-gray-200 shadow-sm min-h-[88px] hover:border-gray-300 hover:bg-gray-50 active:scale-[0.99] transition-all"
               >
-                <div className="flex justify-start pt-3 px-4 pb-1">
-                  <span
-                    className={`inline-block text-xs font-semibold px-3 py-1.5 rounded-xl border ${style.badgeClass}`}
-                  >
-                    {style.label}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between gap-3 px-4 pb-4">
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0 border border-emerald-100">
-                      <MapPin className="w-5 h-5 text-emerald-700" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {place.name}
-                      </p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        انقر لفتح الموقع في خرائط جوجل
-                      </p>
-                    </div>
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <p className="text-sm text-gray-500">جاري تحميل المرافق...</p>
+          </div>
+        ) : places.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 text-center">
+            <p className="text-gray-500 text-sm">لا توجد مرافق قريبة في نطاق البحث</p>
+          </div>
+        ) : filteredPlaces.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 text-center">
+            <p className="text-gray-500 text-sm">لا توجد نتائج لهذا النوع</p>
+          </div>
+        ) : (
+          <div className="grid gap-3">
+            {filteredPlaces.map((place, index) => {
+              const mapsUrl = getGoogleMapsUrl(place.lat, place.lng);
+              const style = getFacilityStyle(place.type);
+              return (
+                <a
+                  key={`${place.lat}-${place.lng}-${index}`}
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block relative bg-white rounded-2xl border border-gray-200 shadow-sm min-h-[88px] hover:border-gray-300 hover:bg-gray-50 active:scale-[0.99] transition-all"
+                >
+                  <div className="flex justify-start pt-3 px-4 pb-1">
+                    <span
+                      className={`inline-block text-xs font-semibold px-3 py-1.5 rounded-xl border ${style.badgeClass}`}
+                    >
+                      {style.label}
+                    </span>
                   </div>
-                  <ExternalLink className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                </div>
-              </a>
-            );
-          })}
-        </div>
-      )}
+                  <div className="flex items-center justify-between gap-3 px-4 pb-4">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0 border border-emerald-100">
+                        <MapPin className="w-5 h-5 text-emerald-700" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{place.name}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">انقر لفتح الموقع في خرائط جوجل</p>
+                      </div>
+                    </div>
+                    <ExternalLink className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        )}
       </div>
+      {/* <BottomNavigation /> */}
     </div>
   );
 }

@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { contractService, Contract } from '@/services/contractService';
 import { Download, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { API_BASE_URL } from '@/lib/config';
+import { useAuthStore } from '@/store/authStore';
 
 /**
  * Contract Signing Screen (Rental & Sale)
@@ -76,6 +78,22 @@ function SignContractContent() {
       };
 
       await contractService.sign(contract._id, signatureData);
+
+      // Refetch profile so auth store gets userType 'resident' (backend sets it when tenant signs)
+      try {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+        if (token) {
+          const profileRes = await fetch(`${API_BASE_URL}/users/profile`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (profileRes.ok) {
+            const profile = await profileRes.json();
+            useAuthStore.getState().updateUser({ userType: profile.userType as 'resident' | 'user' | 'admin' });
+          }
+        }
+      } catch {
+        // non-blocking
+      }
 
       toast.success('Contract signed successfully!');
 

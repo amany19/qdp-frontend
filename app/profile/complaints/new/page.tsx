@@ -45,7 +45,7 @@ export default function NewComplaintPage() {
 
         <button
           onClick={submit}
-          className="w-full bg-[#34A853] text-white py-3 rounded-xl"
+          className="w-full bg-[#000] text-white py-3 rounded-xl"
         >
           إرسال الشكوى
         </button>

@@ -21,7 +21,7 @@ export interface SignContractDTO {
 }
 
 export interface CancelContractDTO {
-  reason: string;
+  cancellationReason: string;
 }
 
 export interface Contract {

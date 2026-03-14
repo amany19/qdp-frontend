@@ -1,12 +1,15 @@
 import Image from "next/image";
 import { MapIcon, PencilLine } from "lucide-react";
+import { getProfilePictureUrl } from "@/lib/profilePicture";
 
 interface SettingsHeaderProps {
   name: string;
   location: string;
-  profilePicture: string;
+  profilePicture?: string | null;
   onEdit?: () => void;
 }
+
+const FALLBACK_AVATAR = "/icons/profile-icon.svg";
 
 export default function SettingsHeader({
   name,
@@ -14,6 +17,7 @@ export default function SettingsHeader({
   profilePicture,
   onEdit,
 }: SettingsHeaderProps) {
+  const avatarUrl = getProfilePictureUrl(profilePicture) || FALLBACK_AVATAR;
   return (
     <div
       className="
@@ -34,7 +38,7 @@ export default function SettingsHeader({
         {/* Avatar */}
         <div className="w-[64px] h-[64px] rounded-full overflow-hidden bg-gray-200 flex-shrink-0">
           <Image
-            src={profilePicture}
+            src={avatarUrl}
             alt={name}
             width={64}
             height={64}

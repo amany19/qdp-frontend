@@ -10,6 +10,7 @@ import { contractService } from '@/services/contractService';
 import { useAuthStore } from '@/store/authStore';
 import { useAppSettings } from '@/hooks/useAppSettings';
 import { API_BASE_URL } from '@/lib/config';
+import { getProfilePictureUrl } from '@/lib/profilePicture';
 import HeaderCard from '@/components/ui/HeaderCard';
 
 
@@ -98,8 +99,7 @@ export default function ProfilePage() {
 
   const tabs = [
     { id: 'account' as TabType, label: 'حسابي', show: true },
-    { id: 'units' as TabType, label: 'وحدتي', show: true },
-    { id: 'offers' as TabType, label: 'عروض المقيمين', show: userType === 'resident' },
+    { id: 'units' as TabType, label: 'وحدتي', show: userType === 'resident' },
     { id: 'ads' as TabType, label: 'إعلاناتي', show: settings.showMyAdsTab },
   ].filter(tab => tab.show);
 
@@ -131,10 +131,10 @@ export default function ProfilePage() {
         <div className="bg-white px-5 py-6 border-b border-gray-100">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
-              {user?.profilePicture ? (
+              {getProfilePictureUrl(user?.profilePicture) ? (
                 <Image
-                  src={user.profilePicture}
-                  alt={user.fullName}
+                  src={getProfilePictureUrl(user?.profilePicture)!}
+                  alt={user?.fullName ?? ''}
                   width={64}
                   height={64}
                   className="w-full h-full object-cover"
@@ -181,7 +181,7 @@ export default function ProfilePage() {
           )}
           
           {activeTab === 'units' && (
-            <UnitsTab contracts={contracts} loading={loading} />
+            <UnitsTab contracts={contracts} loading={loading} userType={userType} />
           )}
           
           {activeTab === 'offers' && (

@@ -6,8 +6,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import ds from '../../../styles/adminDesignSystem';
 import { API_BASE_URL } from '@/lib/config';
 
+type TransferType = 'replace_tenant' | 'property_transfer' | 'ownership_transfer';
+
 interface TransferRequest {
   _id: string;
+  transferType?: TransferType;
   userId: {
     _id: string;
     fullName: string;
@@ -18,14 +21,16 @@ interface TransferRequest {
     title: string;
     location: { area: string; city: string };
   };
-  requestedPropertyId: {
+  requestedPropertyId?: {
     _id: string;
     title: string;
     location: { area: string; city: string };
   };
+  newTenantInfo?: { fullName: string; phone: string; email: string; qatarId: string };
+  newOwnerInfo?: { fullName: string; phone: string; email: string; qatarId: string };
   reason: string;
   status: 'pending' | 'approved' | 'rejected';
-  eligibilityCheck: {
+  eligibilityCheck?: {
     similarUnitAvailable: boolean;
     noLatePayments: boolean;
     allInstallmentsPaid: boolean;
@@ -111,6 +116,8 @@ export default function AdminTransfersPage() {
         t.userId?.fullName?.toLowerCase().includes(query) ||
         t.currentPropertyId?.title?.toLowerCase().includes(query) ||
         t.requestedPropertyId?.title?.toLowerCase().includes(query) ||
+        t.newTenantInfo?.fullName?.toLowerCase().includes(query) ||
+        t.newOwnerInfo?.fullName?.toLowerCase().includes(query) ||
         t.userId?.phone?.includes(query)
       );
     }
@@ -306,9 +313,10 @@ export default function AdminTransfersPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200">
+                <th className="text-right py-3 px-4 font-semibold text-sm" style={{ color: ds.colors.neutral.gray700 }}>النوع</th>
                 <th className="text-right py-3 px-4 font-semibold text-sm" style={{ color: ds.colors.neutral.gray700 }}>المستخدم</th>
                 <th className="text-right py-3 px-4 font-semibold text-sm" style={{ color: ds.colors.neutral.gray700 }}>العقار الحالي</th>
-                <th className="text-right py-3 px-4 font-semibold text-sm" style={{ color: ds.colors.neutral.gray700 }}>العقار المطلوب</th>
+                <th className="text-right py-3 px-4 font-semibold text-sm" style={{ color: ds.colors.neutral.gray700 }}>العقار المطلوب / الطرف الجديد</th>
                 <th className="text-right py-3 px-4 font-semibold text-sm" style={{ color: ds.colors.neutral.gray700 }}>الأهلية</th>
                 <th className="text-right py-3 px-4 font-semibold text-sm" style={{ color: ds.colors.neutral.gray700 }}>الحالة</th>
                 <th className="text-right py-3 px-4 font-semibold text-sm" style={{ color: ds.colors.neutral.gray700 }}>التاريخ</th>
@@ -318,13 +326,18 @@ export default function AdminTransfersPage() {
             <tbody>
               {filteredTransfers.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-8 text-gray-500">
+                  <td colSpan={8} className="text-center py-8 text-gray-500">
                     لا توجد طلبات نقل
                   </td>
                 </tr>
               ) : (
                 filteredTransfers.map((transfer) => (
                   <tr key={transfer._id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                    <td className="py-4 px-4">
+                      <span className="text-xs font-medium px-2 py-1 rounded-full bg-gray-100 text-gray-700">
+                        {transfer.transferType === 'replace_tenant' ? 'استبدال مستأجر' : transfer.transferType === 'ownership_transfer' ? 'نقل ملكية' : 'نقل وحدة'}
+                      </span>
+                    </td>
                     <td className="py-4 px-4">
                       <div>
                         <div className="font-semibold text-sm">{transfer.userId?.fullName || 'N/A'}</div>
@@ -349,22 +362,30 @@ export default function AdminTransfersPage() {
                     </td>
                     <td className="py-4 px-4">
                       <div>
-                        {transfer.requestedPropertyId ? (
+                        {transfer.transferType === 'property_transfer' && transfer.requestedPropertyId ? (
                           <>
                             <div className="text-sm font-medium">{transfer.requestedPropertyId.title}</div>
                             <div className="text-xs text-gray-500">
                               {transfer.requestedPropertyId.location?.area}
                             </div>
                           </>
+                        ) : transfer.newTenantInfo ? (
+                          <>
+                            <div className="text-sm font-medium">{transfer.newTenantInfo.fullName}</div>
+                            <div className="text-xs text-gray-500">مستأجر جديد</div>
+                          </>
+                        ) : transfer.newOwnerInfo ? (
+                          <>
+                            <div className="text-sm font-medium">{transfer.newOwnerInfo.fullName}</div>
+                            <div className="text-xs text-gray-500">مالك جديد</div>
+                          </>
                         ) : (
-                          <div className="text-sm text-gray-400 italic">
-                            العقار محذوف
-                          </div>
+                          <div className="text-sm text-gray-400 italic">—</div>
                         )}
                       </div>
                     </td>
                     <td className="py-4 px-4">
-                      {getEligibilityBadge(transfer.eligibilityCheck)}
+                      {transfer.eligibilityCheck ? getEligibilityBadge(transfer.eligibilityCheck) : <span className="text-gray-400 text-xs">—</span>}
                     </td>
                     <td className="py-4 px-4">
                       {getStatusBadge(transfer.status)}

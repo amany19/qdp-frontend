@@ -31,19 +31,28 @@ interface PropertyBooking {
 }
 
 export default function MyBookingsPage() {
-  const { token } = useAuthStore();
+  const { token, user: authUser } = useAuthStore();
+  const userType = authUser?.userType;
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState<PropertyBooking[]>([]);
   const [filter, setFilter] = useState<'all' | 'rent' | 'sale'>('all');
 
+  // Residents use وحدتي (my-unit) as their hub; redirect them away from حجوزاتي list
   useEffect(() => {
-    if (token) {
+    if (userType === 'resident') {
+      router.replace('/my-unit');
+      return;
+    }
+  }, [userType, router]);
+
+  useEffect(() => {
+    if (token && userType !== 'resident') {
       fetchBookings();
-    } else {
+    } else if (!token) {
       router.push('/login');
     }
-  }, [token, router]);
+  }, [token, userType, router]);
 
   const fetchBookings = async () => {
     try {
@@ -103,7 +112,7 @@ export default function MyBookingsPage() {
   const getNextPaymentInfo = (booking: PropertyBooking) => {
     if (booking.bookingType !== 'rent' || !booking.installments) return null;
 
-    const nextPending = booking.installments.find(i => i.status === 'pending');
+    const nextPending = booking.installments.find(i => i.status === 'pending' || i.status === 'overdue');
     if (!nextPending) return null;
 
     return {
@@ -112,6 +121,21 @@ export default function MyBookingsPage() {
       installmentNumber: nextPending.installmentNumber,
     };
   };
+
+  const getRemainingBalance = (booking: PropertyBooking): number => {
+    if (booking.bookingType !== 'rent' || !booking.installments) return 0;
+    return booking.installments
+      .filter((i) => i.status !== 'paid' && i.status !== 'cancelled')
+      .reduce((sum, i) => sum + (i.amount ?? 0), 0);
+  };
+
+  if (userType === 'resident') {
+    return (
+      <div className="flex items-center justify-center min-h-screen" dir="rtl">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black" />
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -131,7 +155,7 @@ export default function MyBookingsPage() {
             onClick={() => router.push('/profile')}
             className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
           >
-            العودة للملف الشخصي
+            الملف الشخصي
           </button>
         </div>
 
@@ -251,7 +275,7 @@ export default function MyBookingsPage() {
 
                     {/* Next Payment for Rent */}
                     {nextPayment && (
-                      <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                         <div className="text-xs text-yellow-800 mb-1">الدفعة القادمة</div>
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-bold text-yellow-900">
@@ -263,6 +287,19 @@ export default function MyBookingsPage() {
                         </div>
                       </div>
                     )}
+
+                    {/* Remaining balance for rent */}
+                    {booking.bookingType === 'rent' && (() => {
+                      const remaining = getRemainingBalance(booking);
+                      return remaining > 0 ? (
+                        <div className="mb-4 flex justify-between items-center text-sm">
+                          <span className="text-gray-600">المبلغ المتبقي</span>
+                          <span className="font-semibold text-amber-700">
+                            {remaining.toLocaleString()} ر.ق
+                          </span>
+                        </div>
+                      ) : null;
+                    })()}
 
                     {/* View Details Button */}
                     <button

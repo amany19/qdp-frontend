@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { residentOffersService } from '@/services/residentOffersService';
+import { getOfferPartnerName } from '@/types/residentOffer';
 import { Tag } from 'lucide-react';
 
 export default function OffersTab() {
@@ -50,7 +51,7 @@ export default function OffersTab() {
             <div className="min-w-0 flex-1">
               <p className="font-medium text-gray-900">{offer.title}</p>
               <p className="text-xs text-gray-500">
-                {offer.partner ? offer.partner.name : ''} · {offer.discountText}
+                {getOfferPartnerName(offer)} · {offer.discountText}
               </p>
             </div>
           </div>

@@ -47,7 +47,7 @@ export default function ComplaintsPage() {
 
         <button
           onClick={() => router.push("/profile/complaints/new")}
-          className="w-full bg-[#34A853] text-white py-3 rounded-xl"
+          className="w-full bg-[#000] text-white py-3 rounded-xl"
         >
           تقديم شكوى
         </button>
