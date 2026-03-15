@@ -15,4 +15,9 @@ export { default as LocationIcon } from "./LocationIcon";
 export { default as CalenderIcon } from "./CalenderIcon";
 export { default as ProfileIcon } from "./ProfileIcon";
 export { default as WarningIcon } from "./WarningIcon";
+export { default as LanguageIcon } from "./LanguageIcon";
+export { default as SupportIcon } from "./SupportIcon";
+export { default as AboutIcon } from "./AboutIcon";
+export { default as PolicyIcon } from "./PolicyIcon";
+export { default as TermsIcon } from "./TermsIcon";
 

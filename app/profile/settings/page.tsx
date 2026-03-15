@@ -14,6 +14,7 @@ import {
     ArrowRight,
     FileSignature,
 } from 'lucide-react'
+import {AboutIcon, LanguageIcon, PolicyIcon, SupportIcon, TermsIcon} from '@/components/icons'
 import HeaderCard from '@/components/ui/HeaderCard'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/authStore';
@@ -81,33 +82,33 @@ export default function SettingsPage() {
 
     const settingsItems = [
         {
-            icon: Globe,
+            icon: LanguageIcon,
             title: "اللغة",
-            description: "يمكنك تغيير لغة التطبيق من هنا",
+            description: "التطبيق يدعم اكتر من اللغه العربيه و الانجليزيه",
             href: "/settings/language",
         },
         {
-            icon: HelpCircle,
+            icon: SupportIcon,
             title: "الدعم",
-            description: "تواصل معنا",
+            description: "هناك حقيقة مثبتة منذ زمن طويل وهي أن المحتوى ",
             href: "/settings/support",
         },
         {
-            icon: Shield,
+            icon: PolicyIcon,
             title: "سياسة التطبيق",
-            description: "",
+            description: "هناك حقيقة مثبتة منذ زمن طويل وهي أن المحتوى ",
             href: "/settings/policy",
         },
         {
-            icon: Info,
+            icon: AboutIcon,
             title: "عن التطبيق",
-            description: "",
+            description: "هناك حقيقة مثبتة منذ زمن طويل وهي أن المحتوى ",
             href: "/settings/about",
         },
         {
-            icon: FileText,
+            icon: TermsIcon,
             title: "الشروط والأحكام",
-            description: "",
+            description: "هناك حقيقة مثبتة منذ زمن طويل وهي أن المحتوى ",
             href: "/settings/terms",
         },
         {
