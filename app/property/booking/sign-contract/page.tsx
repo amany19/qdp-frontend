@@ -44,11 +44,49 @@ function SignContractContent() {
         const data = await contractService.findOne(contractId);
         setContract(data);
       } else if (propertyId && contractType) {
-        // Create new draft contract
+        // This route (/property/booking/sign-contract) has no property id in path; creating requires full data.
+        // Redirect to use the property-specific flow: open from a property page.
+        const isValidMongoId = (s: string) => /^[a-fA-F0-9]{24}$/.test(s);
+        if (!isValidMongoId(propertyId)) {
+          toast.error('يرجى فتح توقيع العقد من صفحة الوحدة (طلب معاينة أو حجز)');
+          router.replace('/properties');
+          return;
+        }
+        // Fetch profile and property to build full payload
+        const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+        if (!token) {
+          router.push('/auth/login');
+          return;
+        }
+        const [userRes, propertyRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/users/profile`, { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${API_BASE_URL}/properties/${propertyId}`, { headers: { Authorization: `Bearer ${token}` } }),
+        ]);
+        if (!userRes.ok || !propertyRes.ok) {
+          toast.error('فشل تحميل البيانات. استخدم صفحة الوحدة لطلب توقيع العقد.');
+          return;
+        }
+        const user = await userRes.json();
+        const property = await propertyRes.json();
+        const currentUserId = (user._id ?? user.id) ?? '';
+        const landlordId = typeof property.userId === 'object' ? property.userId?._id : property.userId;
+        if (!currentUserId || !landlordId) {
+          toast.error('بيانات غير مكتملة. استخدم صفحة الوحدة لطلب توقيع العقد.');
+          return;
+        }
+        const startDate = new Date();
+        const endDate = contractType === 'rent' ? new Date(startDate.getTime() + 365 * 24 * 60 * 60 * 1000) : undefined;
+        const amount = property.price ?? 0;
         const data = await contractService.create({
           propertyId,
+          tenantId: currentUserId,
+          landlordId: String(landlordId),
           contractType,
-          amount: 0, // Will be populated from property data
+          startDate: startDate.toISOString(),
+          endDate: endDate?.toISOString(),
+          amount,
+          insuranceAmount: amount,
+          ...(contractType === 'rent' && endDate && { numberOfChecks: 12 }),
         });
         setContract(data);
       }

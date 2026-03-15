@@ -5,6 +5,7 @@ import { usePropertyDetail } from '@/hooks/useProperties';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '@/lib/config';
+import { contractService } from '@/services/contractService';
 
 export default function PropertyDetailPage() {
   const params = useParams();
@@ -17,6 +18,9 @@ export default function PropertyDetailPage() {
   const [hasExistingBooking, setHasExistingBooking] = useState(false);
   const [existingBooking, setExistingBooking] = useState<any>(null);
   const [checkingBooking, setCheckingBooking] = useState(true);
+  const [hasExistingContract, setHasExistingContract] = useState(false);
+  const [existingContract, setExistingContract] = useState<any>(null);
+  const [checkingContract, setCheckingContract] = useState(true);
 
   // Check if user already has an active booking for this property
   useEffect(() => {
@@ -55,7 +59,37 @@ export default function PropertyDetailPage() {
     checkExistingBooking();
   }, [propertyId]);
 
-  if (isLoading || checkingBooking) {
+  // Check if user already has a contract (draft, pending_signature, or active) for this property
+  useEffect(() => {
+    const checkExistingContract = async () => {
+      try {
+        const token = localStorage.getItem('accessToken');
+        if (!token || !propertyId) {
+          setCheckingContract(false);
+          return;
+        }
+        const contracts = await contractService.getMyContracts();
+        const pid = (c: any) => {
+          const p = c.propertyId;
+          return p && (typeof p === 'object' && '_id' in p ? (p as { _id: string })._id : String(p));
+        };
+        const match = (contracts || []).find(
+          (c) => pid(c) === propertyId && ['draft', 'pending_signature', 'active'].includes(c.status)
+        );
+        if (match) {
+          setHasExistingContract(true);
+          setExistingContract(match);
+        }
+      } catch {
+        setHasExistingContract(false);
+      } finally {
+        setCheckingContract(false);
+      }
+    };
+    checkExistingContract();
+  }, [propertyId]);
+
+  if (isLoading || checkingBooking || checkingContract) {
     return (
       <div className="min-h-screen bg-[#FDFDFD] flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1A1A1A]"></div>
@@ -417,8 +451,39 @@ export default function PropertyDetailPage() {
               طلب معاينة
             </button>
           </div>
+        ) : hasExistingContract ? (
+          /* Show message when user already has a contract (draft, pending signature, or active) for this unit */
+          <div dir="rtl">
+            <div className="bg-[#FEF3C7] rounded-2xl p-4 border border-[#F59E0B] mb-3">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-[#D97706] rounded-full flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 14H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-bold text-[#1A1A1A] text-sm mb-1">لديك عقد لهذه الوحدة بالفعل</h4>
+                  <p className="text-xs text-[#666666] mb-3">
+                    يوجد عقد لهذه الوحدة (مسودة أو بانتظار توقيع المالك أو نشط). لا يمكن إنشاء عقد جديد.
+                  </p>
+                  <button
+                    onClick={() => router.push(`/contract/pending-unit?propertyId=${encodeURIComponent(propertyId)}${existingContract?._id ? `&contractId=${encodeURIComponent(existingContract._id)}` : ''}`)}
+                    className="w-full py-2.5 px-4 rounded-lg bg-[#D97706] text-white font-medium text-sm"
+                  >
+                    عرض حالة العقد
+                  </button>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => router.push(`/property/${propertyId}/viewing`)}
+              className="w-full py-3 rounded-lg border border-[#E6E6E6] text-[#666666] font-medium text-base"
+            >
+              طلب معاينة
+            </button>
+          </div>
         ) : (
-          /* Show normal booking buttons when no existing booking */
+          /* Show normal booking buttons when no existing booking or contract */
           <div className="flex gap-3">
             <button
               onClick={() => router.push(`/property/${propertyId}/viewing`)}
@@ -428,16 +493,17 @@ export default function PropertyDetailPage() {
             </button>
             <button
               onClick={() => {
-                // If property available for both, show modal to choose
+                // If property available for both, show modal to choose; otherwise go straight to sign-contract
                 if (property?.availableFor?.rent && property?.availableFor?.sale) {
                   setShowBookingModal(true);
                 } else if (property?.availableFor?.rent) {
-                  router.push(`/property/${propertyId}/booking?type=rent`);
+                  router.push(`/property/${propertyId}/booking/sign-contract?type=rent`);
                 } else if (property?.availableFor?.sale) {
-                  router.push(`/property/${propertyId}/booking?type=sale`);
+                  router.push(`/property/${propertyId}/booking/sign-contract?type=sale`);
                 } else {
-                  // Fallback to old category
-                  router.push(`/property/${propertyId}/booking`);
+                  // Fallback: use category and go to sign-contract
+                  const type = property?.category === 'rent' ? 'rent' : 'sale';
+                  router.push(`/property/${propertyId}/booking/sign-contract?type=${type}`);
                 }
               }}
               className="flex-1 py-3 rounded-lg bg-[#1A1A1A] text-[#F3F1EB] font-bold text-base"
@@ -470,7 +536,7 @@ export default function PropertyDetailPage() {
               <button
                 onClick={() => {
                   setShowBookingModal(false);
-                  router.push(`/property/${propertyId}/booking?type=rent`);
+                  router.push(`/property/${propertyId}/booking/sign-contract?type=rent`);
                 }}
                 className="w-full py-4 px-5 rounded-2xl bg-[#3B82F6] text-white font-medium"
               >
@@ -486,7 +552,7 @@ export default function PropertyDetailPage() {
               <button
                 onClick={() => {
                   setShowBookingModal(false);
-                  router.push(`/property/${propertyId}/booking?type=sale`);
+                  router.push(`/property/${propertyId}/booking/sign-contract?type=sale`);
                 }}
                 className="w-full py-4 px-5 rounded-2xl bg-[#22C55E] text-white font-medium"
               >

@@ -183,15 +183,16 @@ export default function ProfilePage() {
             <>
               {(() => {
                 const currentUserId = authUser?.id;
-                type ContractWithParties = Contract & { tenantId?: { _id: string } | string; electronicSignatureLandlord?: string; signedAtLandlord?: string };
+                type ContractWithParties = Contract & { tenantId?: { _id: string } | string; electronicSignatureLandlord?: string; signedAtLandlord?: string; electronicSignatureTenant?: string; signedAtTenant?: string };
                 const pendingOwnerSignature = (contracts || []).filter((c) => {
                   const contract = c as ContractWithParties;
                   if (contract.status !== 'pending_signature') return false;
                   const tenantId = typeof contract.tenantId === 'object' && contract.tenantId !== null && '_id' in contract.tenantId
                     ? (contract.tenantId as { _id: string })._id
                     : String(contract.tenantId ?? '');
+                  const tenantSigned = !!(contract.electronicSignatureTenant || contract.signedAtTenant);
                   const landlordSigned = !!(contract.electronicSignatureLandlord && contract.signedAtLandlord);
-                  return tenantId === currentUserId && !landlordSigned;
+                  return tenantId === currentUserId && tenantSigned && !landlordSigned;
                 });
                 return pendingOwnerSignature.length > 0 ? (
                   <div className="mb-4">

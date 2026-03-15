@@ -13,6 +13,7 @@ import { nearbyService, type NearbyPlace } from '@/services/nearbyService';
 import UnitFeaturesStrip from '@/components/ui/UnitFeaturesStrip';
 import CommitmentRewardCard from '@/components/ui/CommitmentRewardCard';
 import ContractReminderCard from '@/app/profile/components/ContractReminderCard';
+import WarningPopup from '@/components/ui/WarningPopup';
 
 const NEARBY_BADGE_STYLES: Record<string, { label: string; badgeClass: string }> = {
   hospital: { label: 'مستشفى', badgeClass: 'bg-red-50 text-red-700 border border-red-100' },
@@ -61,6 +62,7 @@ export default function MyUnitPage() {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showConfirmCancelPopup, setShowConfirmCancelPopup] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelSubmitting, setCancelSubmitting] = useState(false);
@@ -116,6 +118,32 @@ export default function MyUnitPage() {
   const bookingForContract =
     matchedByContract ??
     (activeContract && rentBookings.length > 0 ? rentBookings[0] : null);
+
+  // #region agent log
+  useEffect(() => {
+    const bid = bookingForContract?._id != null ? String(bookingForContract._id) : '';
+    const url = `/my-transfers/replace-tenant?bookingId=${bid}`;
+    fetch('http://127.0.0.1:7841/ingest/1a620294-f867-41fe-8dbd-93cde5bb999b', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '1a3b6c' },
+      body: JSON.stringify({
+        sessionId: '1a3b6c',
+        location: 'my-unit/page.tsx:bookingForContract',
+        message: 'My-unit: replace-tenant link data',
+        data: {
+          bookingsLength: bookings?.length ?? 0,
+          contractIdStr,
+          hasMatchedByContract: !!matchedByContract,
+          rentBookingsLength: rentBookings?.length ?? 0,
+          bookingForContractId: bid,
+          builtUrl: url,
+        },
+        timestamp: Date.now(),
+        hypothesisId: 'H1-H5',
+      }),
+    }).catch(() => {});
+  }, [bookings?.length, contractIdStr, matchedByContract, rentBookings?.length, bookingForContract?._id]);
+  // #endregion
 
   const propertyIdForNearby = activeContract
     ? (typeof activeContract.propertyId === 'object' &&
@@ -312,7 +340,7 @@ export default function MyUnitPage() {
 
             {activeContract.status === 'active' && (
               <button
-                onClick={() => setShowCancelModal(true)}
+                onClick={() => setShowConfirmCancelPopup(true)}
                 className="w-full mt-1 py-2.5 text-sm font-medium text-[#C83636] border border-[#C83636] rounded-xl hover:bg-red-50"
               >
                 طلب إلغاء العقد
@@ -408,7 +436,22 @@ export default function MyUnitPage() {
           </div>
         )}
 
-        {/* Cancellation request modal */}
+        {/* Confirm cancel contract – warning popup (design: yellow !, dashed border, two buttons) */}
+        <WarningPopup
+          isOpen={showConfirmCancelPopup}
+          onClose={() => setShowConfirmCancelPopup(false)}
+          title="هل أنت متأكد أنك تريد إنهاء عقد الإيجار؟"
+          description="سيتم مراجعته من قبل الإدارة، وسيتم التواصل معك لتأكيد الإنهاء. لن يتم إيقاف الوصول إلى الوحدة إلا بعد الموافقة النهائية."
+          buttonText="نعم، إرسال الطلب"
+          onButtonClick={() => {
+            setShowConfirmCancelPopup(false);
+            setShowCancelModal(true);
+          }}
+          cancelButtonText="إلغاء"
+          onCancelClick={() => setShowConfirmCancelPopup(false)}
+        />
+
+        {/* Cancellation request modal – reason form (shown after confirming in popup) */}
         {showCancelModal && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"

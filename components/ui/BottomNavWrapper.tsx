@@ -32,7 +32,7 @@ export function BottomNavWrapper() {
     pathname?.startsWith('/bookings/')||
     pathname?.startsWith('/nearby')||
     pathname?.startsWith('/appliances/')||
-    pathname?.startsWith('/property/booking/');
+    pathname?.startsWith('/property/');
 
   if (hideBottomNav) {
     return null;

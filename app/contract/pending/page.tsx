@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { contractService, type Contract } from '@/services/contractService';
 import { useAuthStore } from '@/store/authStore';
@@ -17,20 +17,27 @@ export default function ContractPendingPage() {
   const router = useRouter();
   const authUser = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const hasHydrated = useAuthStore((s) => s.hasHydrated);
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!hasHydrated) return;
     if (!isAuthenticated) {
       router.push('/auth/login');
       return;
     }
     loadContracts();
-  }, [isAuthenticated, router]);
+  }, [hasHydrated, isAuthenticated, router]);
 
   const loadContracts = async () => {
     try {
       setLoading(true);
+      const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+      if (!token) {
+        setContracts([]);
+        return;
+      }
       const data = await contractService.getMyContracts();
       setContracts(data || []);
     } catch {
@@ -40,17 +47,59 @@ export default function ContractPendingPage() {
     }
   };
 
-  // Pending owner signature: user is tenant, contract is pending_signature, landlord has not signed
-  const currentUserId = authUser?.id;
+  // Only show contracts where: user is tenant, status is pending_signature (not active), tenant has signed, landlord has NOT signed
+  const currentUserId = (authUser as { id?: string; _id?: string })?.id ?? (authUser as { _id?: string })?._id ?? '';
   const pendingOwnerSignature = (contracts || []).filter((c) => {
-    if (c.status !== 'pending_signature') return false;
+    if (c.status !== 'pending_signature') return false; // exclude active, draft, etc.
     const tenantId = typeof c.tenantId === 'object' && c.tenantId !== null && '_id' in c.tenantId
       ? (c.tenantId as { _id: string })._id
-      : String(c.tenantId);
+      : String(c.tenantId ?? '');
     const isTenant = tenantId === currentUserId;
+    const tenantSigned = !!(c.electronicSignatureTenant || c.signedAtTenant);
     const landlordSigned = !!(c.electronicSignatureLandlord && c.signedAtLandlord);
-    return isTenant && !landlordSigned;
+    return isTenant && tenantSigned && !landlordSigned;
   });
+
+  const pendingLogSent = useRef(false);
+  useEffect(() => {
+    if (loading || pendingLogSent.current) return;
+    pendingLogSent.current = true;
+    const uid = (authUser as { id?: string; _id?: string })?.id ?? (authUser as { _id?: string })?._id ?? '';
+    const payload = {
+      sessionId: '1a3b6c',
+      location: 'contract/pending/page.tsx:filter',
+      message: 'Pending page: contracts and filter result',
+      data: {
+        currentUserId: uid,
+        authUserId: (authUser as { id?: string })?.id,
+        authUser_id: (authUser as { _id?: string })?._id,
+        totalContracts: contracts.length,
+        pendingCount: pendingOwnerSignature.length,
+        contractsSummary: (contracts || []).slice(0, 10).map((c) => {
+          const tid = typeof c.tenantId === 'object' && c.tenantId !== null && '_id' in c.tenantId
+            ? (c.tenantId as { _id: string })._id
+            : String(c.tenantId ?? '');
+          return {
+            _id: c._id,
+            status: c.status,
+            tenantId: tid,
+            isTenant: tid === uid,
+            tenantSigned: !!(c.electronicSignatureTenant || c.signedAtTenant),
+            landlordSigned: !!(c.electronicSignatureLandlord && c.signedAtLandlord),
+            hasElectronicTenant: !!c.electronicSignatureTenant,
+            hasSignedAtTenant: !!c.signedAtTenant,
+          };
+        }),
+      },
+      timestamp: Date.now(),
+      hypothesisId: 'H1-H5',
+    };
+    fetch('http://127.0.0.1:7841/ingest/1a620294-f867-41fe-8dbd-93cde5bb999b', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '1a3b6c' },
+      body: JSON.stringify(payload),
+    }).catch(() => {});
+  }, [loading, contracts, authUser]);
 
   if (loading) {
     return (
@@ -81,9 +130,9 @@ export default function ContractPendingPage() {
           {pendingOwnerSignature.length === 0 ? (
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center">
               <div className="text-4xl mb-3">✅</div>
-              <h2 className="text-lg font-bold text-gray-900 mb-2">لا توجد عقود بانتظار التوقيع</h2>
+              <h2 className="text-lg font-bold text-gray-900 mb-2">لا توجد عقود بانتظار توقيع المالك</h2>
               <p className="text-gray-600 text-sm mb-4">
-                جميع عقودك إما نشطة أو مكتملة. إذا وقّعت عقداً للتو، سيظهر هنا حتى يوقّع المالك.
+                لا توجد عقود تحتاج توقيع المالك فقط. إذا كان العقد موقّعاً من الطرفين، ستجده في وحدتي.
               </p>
               <button
                 onClick={() => router.push('/profile')}
@@ -97,7 +146,7 @@ export default function ContractPendingPage() {
             <>
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
                 <p className="text-amber-800 text-sm font-medium">
-                  العقد بانتظار توقيع المالك (المالكية). سيتم تفعيل العقد وتحويلك إلى ساكن بعد توقيع الطرفين.
+                  لقد وقّعت. بانتظار توقيع المالك فقط — لا يلزمك أي إجراء. سيتم تفعيل العقد وتحويلك إلى ساكن بعد توقيع المالك.
                 </p>
               </div>
               {pendingOwnerSignature.map((contract) => {
@@ -124,15 +173,17 @@ export default function ContractPendingPage() {
                       <p><span className="text-gray-500">رقم العقد:</span> {contract.contractNumber || contract._id.slice(-8)}</p>
                     </div>
                     <p className="text-amber-700 text-sm font-medium mb-3">
-                      بانتظار توقيع المالك — تم تسجيل توقيعك
+                      تم تسجيل توقيعك. بانتظار توقيع المالك فقط.
                     </p>
                     <div className="flex gap-2">
+                      {/* الدفع والمتابعة - commented for now
                       <button
                         onClick={() => router.push(`/property/${prop?._id || ''}/booking/checkout?contractId=${contract._id}`)}
                         className="flex-1 py-2.5 px-4 bg-gray-900 text-white rounded-xl font-medium text-sm"
                       >
                         الدفع والمتابعة
                       </button>
+                      */}
                       <button
                         onClick={() => router.push('/profile')}
                         className="py-2.5 px-4 border border-gray-200 rounded-xl font-medium text-sm text-gray-700"

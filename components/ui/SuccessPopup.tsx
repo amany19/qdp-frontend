@@ -97,7 +97,6 @@ export default function SuccessPopup({
                 <div className="flex justify-center mb-6">
                   <div className="relative">
                     {/* Icon Circle */}
-\
                       {/* SVG Image from public folder */}
                       <Image
                         src="/icons/success-icon.svg" // Adjust the path based on your actual file name

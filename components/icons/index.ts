@@ -14,4 +14,5 @@ export { default as StarIcon } from "./StarIcon";
 export { default as LocationIcon } from "./LocationIcon";
 export { default as CalenderIcon } from "./CalenderIcon";
 export { default as ProfileIcon } from "./ProfileIcon";
+export { default as WarningIcon } from "./WarningIcon";
 

@@ -73,8 +73,9 @@ export default function SettingsPage() {
         const tenantId = typeof contract.tenantId === 'object' && contract.tenantId !== null && '_id' in contract.tenantId
             ? (contract.tenantId as { _id: string })._id
             : String(contract.tenantId ?? '');
+        const tenantSigned = !!(contract.electronicSignatureTenant || contract.signedAtTenant);
         const landlordSigned = !!(contract.electronicSignatureLandlord && contract.signedAtLandlord);
-        return tenantId === authUser?.id && !landlordSigned;
+        return tenantId === authUser?.id && tenantSigned && !landlordSigned;
     });
     const showPendingContractTab = !contractsLoading && pendingOwnerSignature.length > 0;
 

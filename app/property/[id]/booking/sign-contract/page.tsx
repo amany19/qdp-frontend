@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, useParams } from 'next/navigation';
 import { contractService, Contract } from '@/services/contractService';
 import { Download, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -19,11 +19,10 @@ import { useAuthStore } from '@/store/authStore';
 function SignContractContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const params = useParams();
 
-  // Get propertyId from URL path (from booking entry page navigation)
-  const pathParts = window.location.pathname.split('/');
-  const propertyIdRaw = pathParts[2]; // /property/[id]/booking/sign-contract
-  // Only treat as property id if it looks like a MongoDB ObjectId (24 hex chars); avoid routing segments like "renew"
+  // propertyId from route segment [id] (e.g. /property/69b41.../booking/sign-contract)
+  const propertyIdRaw = typeof params?.id === 'string' ? params.id : '';
   const isValidMongoId = (s: string) => /^[a-fA-F0-9]{24}$/.test(s);
   const propertyId = propertyIdRaw && isValidMongoId(propertyIdRaw) ? propertyIdRaw : null;
 
@@ -55,12 +54,45 @@ function SignContractContent() {
         setContract(data);
       } else if (propertyId && contractType) {
         // propertyId is validated above (Mongo ObjectId shape only)
-        // First, check if user already has an active booking for this property
-        const token = localStorage.getItem('accessToken');
+        const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+        if (!token) {
+          toast.error('يجب تسجيل الدخول لإنشاء العقد');
+          router.replace(`/auth/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+          return;
+        }
+
+        // Fetch profile and my contracts once (used for pending check and contract creation)
+        const [userRes, myContracts] = await Promise.all([
+          fetch(`${API_BASE_URL}/users/profile`, { headers: { 'Authorization': `Bearer ${token}` } }),
+          contractService.getMyContracts(),
+        ]);
+        const userData = userRes.ok ? await userRes.json() : null;
+        const currentUserId = userData ? String((userData._id ?? userData.id) ?? '').trim() : '';
+        if (!currentUserId) {
+          throw new Error('يجب تسجيل الدخول. فشل تحميل بيانات المستخدم.');
+        }
+
+        // If user already has a contract for this unit pending owner/admin signature, redirect
+        const pendingForThisUnit = (myContracts || []).find((c: Contract) => {
+          if (c.status !== 'pending_signature') return false;
+          const tid = typeof c.tenantId === 'object' && c.tenantId !== null && '_id' in c.tenantId
+            ? (c.tenantId as { _id: string })._id
+            : String(c.tenantId);
+          const tenantSigned = !!(c.electronicSignatureTenant || c.signedAtTenant);
+          const landlordSigned = !!(c.electronicSignatureLandlord && c.signedAtLandlord);
+          const pid = typeof c.propertyId === 'object' && c.propertyId !== null && '_id' in c.propertyId
+            ? (c.propertyId as { _id: string })._id
+            : String(c.propertyId);
+          return pid === propertyId && tid === currentUserId && tenantSigned && !landlordSigned;
+        });
+        if (pendingForThisUnit) {
+          router.replace(`/contract/pending-unit?propertyId=${encodeURIComponent(propertyId)}&contractId=${encodeURIComponent(pendingForThisUnit._id)}`);
+          return;
+        }
+
+        // Check if user already has an active booking for this property
         const checkResponse = await fetch(`${API_BASE_URL}/user/bookings/check/${propertyId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
+          headers: { 'Authorization': `Bearer ${token}` },
         });
 
         if (checkResponse.ok) {
@@ -74,49 +106,46 @@ function SignContractContent() {
 
         // Fetch the property to get price and owner info
         const propertyResponse = await fetch(`${API_BASE_URL}/properties/${propertyId}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
+          headers: { 'Authorization': `Bearer ${token}` },
         });
 
         if (!propertyResponse.ok) {
-          throw new Error('Failed to load property details');
+          throw new Error('فشل تحميل بيانات العقار');
         }
 
         const property = await propertyResponse.json();
-
-        // Get current user ID from token (reusing token from above)
-        const userResponse = await fetch(`${API_BASE_URL}/users/profile`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-
-        if (!userResponse.ok) {
-          throw new Error('Failed to get user info');
-        }
-
-        const user = await userResponse.json();
 
         // Calculate dates
         const startDate = new Date();
         const endDate = contractType === 'rent' ? new Date(startDate.getTime() + 365 * 24 * 60 * 60 * 1000) : undefined; // 1 year for rent
 
-        // Get amount from property price
-        const amount = property.price;
+        // Amount: property.price or availableFor.rentPrice/salePrice
+        const amount =
+          Number(property.price) ||
+          Number(property.availableFor?.rentPrice) ||
+          Number(property.availableFor?.salePrice) ||
+          0;
 
-        if (!amount) {
-          throw new Error('Property does not have a price');
+        if (amount <= 0) {
+          throw new Error('لم يتم تحديد سعر العقار. يرجى التواصل مع الدعم أو اختيار وحدة أخرى.');
         }
 
-        // Extract landlord ID from property
-        const landlordId = typeof property.userId === 'object' ? property.userId._id : property.userId;
+        // Extract landlord ID from property (populated or raw id)
+        const rawLandlord = property.userId;
+        const landlordId = rawLandlord != null
+          ? (typeof rawLandlord === 'object' && rawLandlord !== null && '_id' in rawLandlord
+            ? String((rawLandlord as { _id: string })._id)
+            : String(rawLandlord))
+          : '';
+        if (!landlordId) {
+          throw new Error('لم يتم العثور على مالك العقار. يرجى التواصل مع الدعم.');
+        }
 
         // Create new draft contract with all required fields
         const contractData: any = {
           propertyId,
-          tenantId: user._id, // Current user is the tenant/buyer
-          landlordId: landlordId, // Property owner is the landlord/seller
+          tenantId: currentUserId,
+          landlordId,
           contractType,
           startDate: startDate.toISOString(),
           amount,
@@ -129,14 +158,62 @@ function SignContractContent() {
           contractData.numberOfChecks = 12;
         }
 
+        // #region agent log
+        const isValidHex24 = (s: unknown) => typeof s === 'string' && /^[a-fA-F0-9]{24}$/.test(s);
+        fetch('http://127.0.0.1:7841/ingest/1a620294-f867-41fe-8dbd-93cde5bb999b', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '1a3b6c' },
+          body: JSON.stringify({
+            sessionId: '1a3b6c',
+            location: 'sign-contract/page.tsx:before-create',
+            message: 'POST /contracts payload and property.userId shape',
+            data: {
+              propertyId,
+              contractType,
+              landlordId,
+              landlordIdValidMongo: isValidHex24(landlordId),
+              tenantIdValidMongo: isValidHex24(currentUserId),
+              amount: contractData.amount,
+              keys: Object.keys(contractData),
+              rawLandlordType: typeof rawLandlord,
+              rawLandlordKeys: rawLandlord != null && typeof rawLandlord === 'object' ? Object.keys(rawLandlord) : null,
+            },
+            timestamp: Date.now(),
+            hypothesisId: 'H1-H5',
+          }),
+        }).catch(() => {});
+        // #endregion
+
         const data = await contractService.create(contractData);
         setContract(data);
       } else if (contractType && !propertyId && propertyIdRaw) {
         toast.error('رابط غير صالح. يرجى فتح توقيع العقد من صفحة الوحدة أو من تجديد العقد.');
       }
     } catch (error: unknown) {
-      const err = error as { message?: string; response?: { data?: { message?: string } } };
-      toast.error(err.response?.data?.message || err.message || 'فشل تحميل العقد');
+      const err = error as { message?: string; response?: { status?: number; data?: unknown } };
+      // #region agent log
+      if (err.response?.status === 400) {
+        fetch('http://127.0.0.1:7841/ingest/1a620294-f867-41fe-8dbd-93cde5bb999b', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '1a3b6c' },
+          body: JSON.stringify({
+            sessionId: '1a3b6c',
+            location: 'sign-contract/page.tsx:catch-400',
+            message: 'POST /contracts 400 response body',
+            data: { status: err.response?.status, body: err.response?.data },
+            timestamp: Date.now(),
+            hypothesisId: 'H3',
+          }),
+        }).catch(() => {});
+      }
+      // #endregion
+      const msg = (err.response?.data as { message?: string })?.message ?? err.message ?? 'فشل تحميل العقد';
+      const duplicateContractMessage = 'لديك عقد نشط بالفعل لهذا العقار. لا يمكنك حجز نفس العقار مرتين.';
+      if (err.response?.status === 400 && msg === duplicateContractMessage && propertyId) {
+        router.replace(`/contract/pending-unit?propertyId=${encodeURIComponent(propertyId)}`);
+        return;
+      }
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -208,9 +285,26 @@ function SignContractContent() {
 
   if (!contract) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-500" dir="rtl">لم يتم العثور على العقد</p>
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6" dir="rtl">
+        <div className="text-center max-w-sm space-y-4">
+          <p className="text-red-600 font-medium">لم يتم إنشاء العقد أو العثور عليه</p>
+          <p className="text-gray-600 text-sm">
+            تأكد من تسجيل الدخول وأن العقار يحتوي سعراً ومالكاً. إن ظهرت رسالة خطأ أعلى الصفحة، اتبعها.
+          </p>
+          <div className="flex flex-col gap-2 pt-2">
+            <button
+              onClick={() => { setLoading(true); loadContract(); }}
+              className="w-full py-3 px-4 bg-gray-900 text-white rounded-xl font-medium"
+            >
+              إعادة المحاولة
+            </button>
+            <button
+              onClick={() => router.back()}
+              className="w-full py-3 px-4 border border-gray-200 rounded-xl font-medium text-gray-700"
+            >
+              رجوع
+            </button>
+          </div>
         </div>
       </div>
     );
