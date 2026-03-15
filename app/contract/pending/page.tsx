@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { contractService, type Contract } from '@/services/contractService';
 import { useAuthStore } from '@/store/authStore';
@@ -59,47 +59,6 @@ export default function ContractPendingPage() {
     const landlordSigned = !!(c.electronicSignatureLandlord && c.signedAtLandlord);
     return isTenant && tenantSigned && !landlordSigned;
   });
-
-  const pendingLogSent = useRef(false);
-  useEffect(() => {
-    if (loading || pendingLogSent.current) return;
-    pendingLogSent.current = true;
-    const uid = (authUser as { id?: string; _id?: string })?.id ?? (authUser as { _id?: string })?._id ?? '';
-    const payload = {
-      sessionId: '1a3b6c',
-      location: 'contract/pending/page.tsx:filter',
-      message: 'Pending page: contracts and filter result',
-      data: {
-        currentUserId: uid,
-        authUserId: (authUser as { id?: string })?.id,
-        authUser_id: (authUser as { _id?: string })?._id,
-        totalContracts: contracts.length,
-        pendingCount: pendingOwnerSignature.length,
-        contractsSummary: (contracts || []).slice(0, 10).map((c) => {
-          const tid = typeof c.tenantId === 'object' && c.tenantId !== null && '_id' in c.tenantId
-            ? (c.tenantId as { _id: string })._id
-            : String(c.tenantId ?? '');
-          return {
-            _id: c._id,
-            status: c.status,
-            tenantId: tid,
-            isTenant: tid === uid,
-            tenantSigned: !!(c.electronicSignatureTenant || c.signedAtTenant),
-            landlordSigned: !!(c.electronicSignatureLandlord && c.signedAtLandlord),
-            hasElectronicTenant: !!c.electronicSignatureTenant,
-            hasSignedAtTenant: !!c.signedAtTenant,
-          };
-        }),
-      },
-      timestamp: Date.now(),
-      hypothesisId: 'H1-H5',
-    };
-    fetch('http://127.0.0.1:7841/ingest/1a620294-f867-41fe-8dbd-93cde5bb999b', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '1a3b6c' },
-      body: JSON.stringify(payload),
-    }).catch(() => {});
-  }, [loading, contracts, authUser]);
 
   if (loading) {
     return (

@@ -158,32 +158,6 @@ function SignContractContent() {
           contractData.numberOfChecks = 12;
         }
 
-        // #region agent log
-        const isValidHex24 = (s: unknown) => typeof s === 'string' && /^[a-fA-F0-9]{24}$/.test(s);
-        fetch('http://127.0.0.1:7841/ingest/1a620294-f867-41fe-8dbd-93cde5bb999b', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '1a3b6c' },
-          body: JSON.stringify({
-            sessionId: '1a3b6c',
-            location: 'sign-contract/page.tsx:before-create',
-            message: 'POST /contracts payload and property.userId shape',
-            data: {
-              propertyId,
-              contractType,
-              landlordId,
-              landlordIdValidMongo: isValidHex24(landlordId),
-              tenantIdValidMongo: isValidHex24(currentUserId),
-              amount: contractData.amount,
-              keys: Object.keys(contractData),
-              rawLandlordType: typeof rawLandlord,
-              rawLandlordKeys: rawLandlord != null && typeof rawLandlord === 'object' ? Object.keys(rawLandlord) : null,
-            },
-            timestamp: Date.now(),
-            hypothesisId: 'H1-H5',
-          }),
-        }).catch(() => {});
-        // #endregion
-
         const data = await contractService.create(contractData);
         setContract(data);
       } else if (contractType && !propertyId && propertyIdRaw) {
@@ -191,22 +165,6 @@ function SignContractContent() {
       }
     } catch (error: unknown) {
       const err = error as { message?: string; response?: { status?: number; data?: unknown } };
-      // #region agent log
-      if (err.response?.status === 400) {
-        fetch('http://127.0.0.1:7841/ingest/1a620294-f867-41fe-8dbd-93cde5bb999b', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '1a3b6c' },
-          body: JSON.stringify({
-            sessionId: '1a3b6c',
-            location: 'sign-contract/page.tsx:catch-400',
-            message: 'POST /contracts 400 response body',
-            data: { status: err.response?.status, body: err.response?.data },
-            timestamp: Date.now(),
-            hypothesisId: 'H3',
-          }),
-        }).catch(() => {});
-      }
-      // #endregion
       const msg = (err.response?.data as { message?: string })?.message ?? err.message ?? 'فشل تحميل العقد';
       const duplicateContractMessage = 'لديك عقد نشط بالفعل لهذا العقار. لا يمكنك حجز نفس العقار مرتين.';
       if (err.response?.status === 400 && msg === duplicateContractMessage && propertyId) {

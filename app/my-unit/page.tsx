@@ -79,6 +79,7 @@ export default function MyUnitPage() {
     loadData();
   }, [isAuthenticated, router]);
 
+  /** Load contracts and bookings from API (database). No debug or external inject. */
   const loadData = async () => {
     try {
       setLoading(true);
@@ -119,32 +120,6 @@ export default function MyUnitPage() {
   const bookingForContract =
     matchedByContract ??
     (activeContract && rentBookings.length > 0 ? rentBookings[0] : null);
-
-  // #region agent log
-  useEffect(() => {
-    const bid = bookingForContract?._id != null ? String(bookingForContract._id) : '';
-    const url = `/my-transfers/replace-tenant?bookingId=${bid}`;
-    fetch('http://127.0.0.1:7841/ingest/1a620294-f867-41fe-8dbd-93cde5bb999b', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '1a3b6c' },
-      body: JSON.stringify({
-        sessionId: '1a3b6c',
-        location: 'my-unit/page.tsx:bookingForContract',
-        message: 'My-unit: replace-tenant link data',
-        data: {
-          bookingsLength: bookings?.length ?? 0,
-          contractIdStr,
-          hasMatchedByContract: !!matchedByContract,
-          rentBookingsLength: rentBookings?.length ?? 0,
-          bookingForContractId: bid,
-          builtUrl: url,
-        },
-        timestamp: Date.now(),
-        hypothesisId: 'H1-H5',
-      }),
-    }).catch(() => {});
-  }, [bookings?.length, contractIdStr, matchedByContract, rentBookings?.length, bookingForContract?._id]);
-  // #endregion
 
   const propertyIdForNearby = activeContract
     ? (typeof activeContract.propertyId === 'object' &&

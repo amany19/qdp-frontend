@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
 import HeaderCard from '@/components/ui/HeaderCard';
@@ -13,28 +13,6 @@ export default function ReplaceTenantPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const bookingId = searchParams.get('bookingId') || '';
-
-  // #region agent log
-  const replaceTenantLogSent = useRef(false);
-  useEffect(() => {
-    if (replaceTenantLogSent.current) return;
-    replaceTenantLogSent.current = true;
-    const raw = searchParams.get('bookingId');
-    const showForm = Boolean(bookingId && bookingId.trim());
-    fetch('http://127.0.0.1:7841/ingest/1a620294-f867-41fe-8dbd-93cde5bb999b', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '1a3b6c' },
-      body: JSON.stringify({
-        sessionId: '1a3b6c',
-        location: 'my-transfers/replace-tenant/page.tsx:mount',
-        message: 'Replace-tenant page: bookingId and content branch',
-        data: { bookingIdRaw: raw, bookingId, showForm, search: typeof window !== 'undefined' ? window.location.search : '' },
-        timestamp: Date.now(),
-        hypothesisId: 'H1-H5',
-      }),
-    }).catch(() => {});
-  }, [searchParams, bookingId]);
-  // #endregion
 
   const [info, setInfo] = useState<NewTenantOrOwnerInfo>(emptyInfo);
   const [reason, setReason] = useState('');
