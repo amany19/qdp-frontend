@@ -50,6 +50,7 @@ interface Booking {
 interface PropertySpecs {
   bedrooms?: number;
   bathrooms?: number;
+  kitchen?: number;
   areaSqm?: number;
   livingRooms?: number;
 }
@@ -254,7 +255,7 @@ export default function MyUnitPage() {
   };
 
   const unitTitle =
-    property?.titleAr || property?.title || `وحدة رقم ${(property?._id || '').slice(-4)}`;
+    property?.titleAr || property?.title || (property?._id ? String(property._id).slice(-4) : '—');
 
   const previewNearby = nearbyPlaces.slice(0, 4);
 
@@ -296,10 +297,10 @@ export default function MyUnitPage() {
             <h3 className="text-base font-bold text-gray-900">تفاصيل الوحدة</h3>
             <UnitFeaturesStrip
               unitTitle={unitTitle}
-              kitchenLabel="1 مطبخ"
+              kitchenLabel={specs.kitchen != null ? `${specs.kitchen} مطبخ` : '1 مطبخ'}
               bathroomsLabel={specs.bathrooms != null ? `${specs.bathrooms} حمام` : 'حمام'}
               bedroomsLabel={specs.bedrooms != null ? `${specs.bedrooms} غرف` : 'غرف'}
-              areaLabel={specs.areaSqm != null ? `${specs.areaSqm} متر` : 'متر'}
+              areaLabel={specs.areaSqm != null ? `${specs.areaSqm} م²` : 'م²'}
             />
 
             <div className="pt-3 border-t border-gray-100 space-y-2">
@@ -361,14 +362,13 @@ export default function MyUnitPage() {
               >
                 طلب استبدال مستأجر
               </button>
-              {/* IMPLEMENT IF REQUESTED */}
-              {/* <button
+              <button
                 type="button"
                 onClick={() => router.push('/my-transfers/property-transfer')}
                 className="w-full py-2.5 text-sm font-medium text-gray-800 bg-gray-100 rounded-xl hover:bg-gray-200 text-right"
               >
-                نقل إلى وحدة أخرى
-              </button> */}
+                طلب نقل إلى وحدة أخرى
+              </button>
             </>
           )}
           {activeContract.contractType === 'sale' && (

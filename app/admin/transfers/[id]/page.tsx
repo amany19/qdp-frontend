@@ -48,6 +48,7 @@ interface TransferRequest {
   }>;
   rejectionReason?: string;
   adminNotes?: string;
+  requestedMessage?: string;
   createdAt: string;
   approvedAt?: string;
 }
@@ -135,19 +136,41 @@ export default function AdminTransferDetailPage() {
       pending: 'bg-yellow-100 text-yellow-800',
       approved: 'bg-green-100 text-green-800',
       rejected: 'bg-red-100 text-red-800',
+      awaiting_info: 'bg-blue-100 text-blue-800',
+      completed: 'bg-gray-100 text-gray-800',
     };
 
     const labels: Record<string, string> = {
       pending: 'قيد المراجعة',
       approved: 'موافق عليه',
       rejected: 'مرفوض',
+      awaiting_info: 'بانتظار معلومات',
+      completed: 'مكتمل',
     };
 
     return (
-      <span className={`px-3 py-1 text-sm font-medium rounded-full ${styles[status] || ''}`}>
+      <span className={`px-3 py-1 text-sm font-medium rounded-full ${styles[status] || 'bg-gray-100 text-gray-800'}`}>
         {labels[status] || status}
       </span>
     );
+  };
+
+  const handleRequestMoreInfo = async () => {
+    const message = prompt('رسالة طلب معلومات إضافية للمستأجر:');
+    if (!message?.trim()) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/properties/transfers/${transferId}/request-info`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message }),
+      });
+      if (response.ok) fetchTransfer();
+    } catch (e) {
+      console.error('Error requesting more info:', e);
+    }
   };
 
   if (loading) {
@@ -200,7 +223,11 @@ export default function AdminTransferDetailPage() {
             تفاصيل طلب النقل
           </h1>
           <p className="text-sm text-gray-600 mt-1">
-            {transfer.transferType === 'replace_tenant' ? 'استبدال مستأجر' : transfer.transferType === 'ownership_transfer' ? 'نقل ملكية' : 'نقل إلى وحدة أخرى'}
+            {transfer.transferType === 'replace_tenant'
+              ? 'استبدال مستأجر — الطرف الحالي يطلب استبداله بمستأجر جديد في نفس الوحدة'
+              : transfer.transferType === 'ownership_transfer'
+                ? 'نقل ملكية'
+                : 'نقل إلى وحدة أخرى — المستأجر يطلب نقل إقامته لوحدة أخرى'}
           </p>
         </div>
 
@@ -298,6 +325,7 @@ export default function AdminTransferDetailPage() {
                     >
                       عرض التفاصيل →
                     </button>
+                    <p className="text-xs text-green-700 mt-2 bg-green-50 p-2 rounded">بعد الموافقة: يُحدَّث العقد والحجز تلقائياً لوحدة العقار المطلوب.</p>
                   </>
                 )}
                 {(transfer.transferType === 'replace_tenant' && transfer.newTenantInfo) && (
@@ -309,6 +337,7 @@ export default function AdminTransferDetailPage() {
                       <p className="text-sm text-gray-600">{transfer.newTenantInfo.email}</p>
                       <p className="text-xs text-gray-500">هوية: {transfer.newTenantInfo.qatarId}</p>
                     </div>
+                    <p className="text-xs text-amber-700 mt-2 bg-amber-50 p-2 rounded">بعد الموافقة: يُنهى عقد المستأجر الحالي. إنشاء عقد المستأجر الجديد يتم يدوياً من قبل الإدارة.</p>
                   </>
                 )}
                 {(transfer.transferType === 'ownership_transfer' && transfer.newOwnerInfo) && (
@@ -428,12 +457,20 @@ export default function AdminTransferDetailPage() {
               <p className="text-sm text-red-700">{transfer.rejectionReason}</p>
             </div>
           )}
+
+          {/* Requested more info (awaiting_info) */}
+          {transfer.status === 'awaiting_info' && transfer.requestedMessage && (
+            <div style={ds.components.glassCard} className="bg-blue-50 border border-blue-200">
+              <h3 className="text-lg font-bold mb-2 text-blue-800">طلب معلومات إضافية</h3>
+              <p className="text-sm text-blue-700">{transfer.requestedMessage}</p>
+            </div>
+          )}
         </div>
 
         {/* Right Column - Actions and Info */}
         <div className="space-y-6">
           {/* Actions */}
-          {transfer.status === 'pending' && (
+          {(transfer.status === 'pending' || transfer.status === 'awaiting_info') && (
             <div style={ds.components.glassCard}>
               <h3 className="text-xl font-bold mb-4">الإجراءات</h3>
               <div className="space-y-3">
@@ -448,6 +485,12 @@ export default function AdminTransferDetailPage() {
                   className="w-full py-3 px-6 rounded-lg bg-red-500 text-white font-semibold hover:bg-red-600 transition-colors"
                 >
                   رفض النقل
+                </button>
+                <button
+                  onClick={handleRequestMoreInfo}
+                  className="w-full py-3 px-6 rounded-lg border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+                >
+                  طلب معلومات إضافية
                 </button>
               </div>
             </div>

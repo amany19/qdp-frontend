@@ -86,7 +86,7 @@ export default function PropertiesPage() {
   }, [allProperties, searchTerm]);
 
   return (
-    <RoleGuard allowedRoles={["user","guest"]} >
+    // <RoleGuard allowedRoles={["user","guest"]} >
     <div className="min-h-screen bg-gray-50 pb-32" dir="rtl">
       {/* Header */}
       <HeaderCard title={'الوحدات'}           leftButton={
@@ -214,6 +214,6 @@ export default function PropertiesPage() {
       </div>
 
     </div>
-   </RoleGuard>
+  //  </RoleGuard>
   );
 }

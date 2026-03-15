@@ -62,16 +62,20 @@ export default function MyTransfersPage() {
       pending: 'bg-yellow-100 text-yellow-800',
       approved: 'bg-green-100 text-green-800',
       rejected: 'bg-red-100 text-red-800',
+      awaiting_info: 'bg-blue-100 text-blue-800',
+      completed: 'bg-gray-100 text-gray-800',
     };
 
     const labels: Record<string, string> = {
       pending: 'قيد المراجعة',
       approved: 'موافق عليه',
       rejected: 'مرفوض',
+      awaiting_info: 'بانتظار معلومات',
+      completed: 'مكتمل',
     };
 
     return (
-      <span className={`px-3 py-1 text-xs font-medium rounded-full ${styles[status] || ''}`}>
+      <span className={`px-3 py-1 text-xs font-medium rounded-full ${styles[status] || 'bg-gray-100 text-gray-800'}`}>
         {labels[status] || status}
       </span>
     );
@@ -101,6 +105,8 @@ export default function MyTransfersPage() {
         }
       />
       <div className="px-4 py-6 max-w-7xl mx-auto">
+
+
         {/* Filters */}
         <div className="flex gap-2 mb-6">
           <button

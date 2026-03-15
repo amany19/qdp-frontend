@@ -160,8 +160,8 @@ function PaymentDueSection({ isResident }: { isResident: boolean }) {
 }
 
 function UnitDetails({ contract }: { contract: Contract }) {
-  const unitTitle = contract.propertyId.titleAr || contract.propertyId.title || 'وحدة رقم 2048';
-  const prop = contract.propertyId as { specifications?: { areaSqm?: number; bedrooms?: number; bathrooms?: number } };
+  const prop = contract.propertyId as { _id?: string; titleAr?: string; title?: string; specifications?: { areaSqm?: number; bedrooms?: number; bathrooms?: number; kitchen?: number } };
+  const unitTitle = prop?.titleAr || prop?.title || (prop?._id ? String(prop._id).slice(-4) : '—');
   const specs = prop?.specifications;
 
   return (
@@ -171,10 +171,10 @@ function UnitDetails({ contract }: { contract: Contract }) {
       <div className="bg-white border border-gray-200 rounded-xl p-4 space-y-4">
         <UnitFeaturesStrip
           unitTitle={unitTitle}
-          kitchenLabel="1 مطبخ"
+          kitchenLabel={specs?.kitchen != null ? `${specs.kitchen} مطبخ` : '1 مطبخ'}
           bathroomsLabel={specs?.bathrooms != null ? `${specs.bathrooms} حمام` : 'حمام'}
           bedroomsLabel={specs?.bedrooms != null ? `${specs.bedrooms} غرف` : 'غرف'}
-          areaLabel={specs?.areaSqm != null ? `${specs.areaSqm} متر` : 'متر'}
+          areaLabel={specs?.areaSqm != null ? `${specs.areaSqm} م²` : 'م²'}
         />
 
         {/* Contract Details */}

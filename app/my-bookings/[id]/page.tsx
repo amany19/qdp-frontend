@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { ArrowRight } from 'lucide-react';
 import { useAuthStore } from '../../../store/authStore';
 import { BottomNavigation } from '@/components/ui/BottomNavigation';
+import HeaderCard from '@/components/ui/HeaderCard';
 import { API_BASE_URL } from '@/lib/config';
 
 interface PropertyBooking {
@@ -128,21 +130,21 @@ export default function BookingDetailsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8" dir="rtl">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">
-            {isResident ? 'تفاصيل الدفع والأقساط' : 'تفاصيل الحجز'}
-          </h1>
+    <div className="min-h-screen bg-gray-50 pb-24" dir="rtl">
+      <HeaderCard
+        title={isResident ? 'تفاصيل الدفع والأقساط' : 'تفاصيل الحجز'}
+        leftButton={
           <button
+            type="button"
             onClick={() => router.push(isResident ? '/my-unit' : '/my-bookings')}
-            className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 flex items-center gap-1"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            aria-label="رجوع"
           >
-            {isResident ? 'العودة لوحدتي' : 'العودة لحجوزاتي'}
+            <ArrowRight className="w-5 h-5 text-gray-900" />
           </button>
-        </div>
-
+        }
+      />
+      <div className="max-w-6xl mx-auto px-4 md:px-8 pt-4">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Property Info */}
           <div className="lg:col-span-2 space-y-6">

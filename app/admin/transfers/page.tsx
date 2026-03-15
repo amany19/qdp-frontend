@@ -59,6 +59,7 @@ export default function AdminTransfersPage() {
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [transferTypeFilter, setTransferTypeFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
@@ -69,7 +70,7 @@ export default function AdminTransfersPage() {
 
   useEffect(() => {
     applyFilters();
-  }, [transfers, statusFilter, searchQuery]);
+  }, [transfers, statusFilter, transferTypeFilter, searchQuery]);
 
   const fetchTransfers = async () => {
     try {
@@ -103,6 +104,15 @@ export default function AdminTransfersPage() {
 
   const applyFilters = () => {
     let filtered = [...transfers];
+
+    // Transfer type filter (two main cases)
+    if (transferTypeFilter === 'property_transfer') {
+      filtered = filtered.filter(t => t.transferType === 'property_transfer');
+    } else if (transferTypeFilter === 'replace_tenant') {
+      filtered = filtered.filter(t => t.transferType === 'replace_tenant');
+    } else if (transferTypeFilter === 'ownership_transfer') {
+      filtered = filtered.filter(t => t.transferType === 'ownership_transfer');
+    }
 
     // Status filter
     if (statusFilter !== 'all') {
@@ -182,16 +192,20 @@ export default function AdminTransfersPage() {
       pending: 'bg-yellow-100 text-yellow-800',
       approved: 'bg-green-100 text-green-800',
       rejected: 'bg-red-100 text-red-800',
+      awaiting_info: 'bg-blue-100 text-blue-800',
+      completed: 'bg-gray-100 text-gray-800',
     };
 
     const labels: Record<string, string> = {
       pending: 'قيد المراجعة',
       approved: 'موافق عليه',
       rejected: 'مرفوض',
+      awaiting_info: 'بانتظار معلومات',
+      completed: 'مكتمل',
     };
 
     return (
-      <span className={`px-3 py-1 text-xs font-medium rounded-full ${styles[status] || ''}`}>
+      <span className={`px-3 py-1 text-xs font-medium rounded-full ${styles[status] || 'bg-gray-100 text-gray-800'}`}>
         {labels[status] || status}
       </span>
     );
@@ -238,9 +252,9 @@ export default function AdminTransfersPage() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2" style={{ color: ds.colors.primary.black }}>
-          طلبات نقل العقارات
+          طلبات النقل
         </h1>
-        <p className="text-gray-600">إدارة طلبات نقل المستأجرين بين العقارات</p>
+        <p className="text-gray-600">إدارة طلبات النقل</p>
       </div>
 
       {/* Stats Summary */}
@@ -273,7 +287,7 @@ export default function AdminTransfersPage() {
 
       {/* Filters */}
       <div style={ds.components.glassCard} className="mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Search */}
           <div>
             <label className="block text-sm font-medium mb-2" style={{ color: ds.colors.neutral.gray700 }}>
@@ -286,6 +300,23 @@ export default function AdminTransfersPage() {
               placeholder="اسم المستخدم أو العقار..."
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
             />
+          </div>
+
+          {/* Transfer type: two main cases */}
+          <div>
+            <label className="block text-sm font-medium mb-2" style={{ color: ds.colors.neutral.gray700 }}>
+              نوع الطلب
+            </label>
+            <select
+              value={transferTypeFilter}
+              onChange={(e) => setTransferTypeFilter(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+            >
+              <option value="all">الكل</option>
+              <option value="property_transfer">نقل إلى وحدة أخرى</option>
+              <option value="replace_tenant">استبدال مستأجر</option>
+              <option value="ownership_transfer">نقل ملكية</option>
+            </select>
           </div>
 
           {/* Status Filter */}
@@ -302,6 +333,7 @@ export default function AdminTransfersPage() {
               <option value="pending">قيد المراجعة</option>
               <option value="approved">موافق عليها</option>
               <option value="rejected">مرفوضة</option>
+              <option value="awaiting_info">بانتظار معلومات</option>
             </select>
           </div>
         </div>
@@ -401,7 +433,7 @@ export default function AdminTransfersPage() {
                         >
                           عرض
                         </button>
-                        {transfer.status === 'pending' && (
+                        {(transfer.status === 'pending' || transfer.status === 'awaiting_info') && (
                           <>
                             <button
                               onClick={() => handleApprove(transfer._id)}

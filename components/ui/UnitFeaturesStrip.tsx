@@ -1,18 +1,11 @@
 'use client';
 
 import React from 'react';
-import {
-  BuildingIcon,
-  ChefHatIcon,
-  BathIcon,
-  BedIcon,
-  RulerIcon,
-} from '@/components/icons';
+import Image from 'next/image';
 
 export interface UnitFeaturesStripProps {
-  /** Unit label e.g. "وحدة رقم 204B" */
+  /** Unit label e.g. "204B" – will be shown as "وحدة رقم {unitTitle}" in the dark bar */
   unitTitle: string;
-  /** Optional: show values under icons (e.g. "١ مطبخ", "٢ حمام") */
   kitchenLabel?: string;
   bathroomsLabel?: string;
   bedroomsLabel?: string;
@@ -25,6 +18,10 @@ const defaultBathrooms = 'حمام';
 const defaultBedrooms = 'غرف';
 const defaultArea = 'متر';
 
+const circleStyle = {
+  boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.06)' as const,
+};
+
 export default function UnitFeaturesStrip({
   unitTitle,
   kitchenLabel = defaultKitchen,
@@ -33,33 +30,59 @@ export default function UnitFeaturesStrip({
   areaLabel = defaultArea,
   className = '',
 }: UnitFeaturesStripProps) {
-  const circleBase =
-    'flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gray-100 border border-gray-200/80 text-gray-700';
-  const iconSize = { width: 22, height: 22 };
-
   return (
-    <div className={`flex flex-col gap-3 ${className}`} dir="rtl">
-      {/* Unit identifier: title + building icon (right-aligned in RTL) */}
-      <div className="flex items-center justify-end gap-2">
-        <span className="text-base font-semibold text-gray-900">{unitTitle}</span>
-        <span className="flex h-6 w-6 items-center justify-center text-gray-600 [&_path]:fill-current">
-          <BuildingIcon className="h-5 w-5" />
+    <div className={`flex flex-col gap-2 ${className}`} dir="rtl">
+      {/* Unit identifier: white background, no outline, building icon + "وحدة رقم {title}" */}
+      <div className="bg-white rounded-xl flex items-center gap-2 px-4 py-3">
+        <Image
+          src="/icons/building-icon.svg"
+          alt=""
+          width={20}
+          height={20}
+          className="shrink-0"
+        />
+        <span className="text-[#1A1A1A] font-medium text-sm">
+          وحدة رقم {unitTitle}
         </span>
       </div>
 
-      {/* Row of 4 feature circles: kitchen, bathroom, bedroom, area */}
-      <div className="flex flex-row gap-3 justify-end flex-wrap text-gray-700 [&_path]:stroke-current [&_path]:fill-none">
-        <div className={circleBase} title={kitchenLabel}>
-          <ChefHatIcon className="h-[22px] w-[22px]" />
+      {/* Four feature circles: Kitchen, Bathroom, Bedroom, Area – light beige with subtle inset, labels under each */}
+      <div className="grid grid-cols-4 gap-2">
+        <div className="flex flex-col items-center">
+          <div
+            className="w-12 h-12 rounded-full flex items-center justify-center mb-2 bg-[#F3F1EB] border border-[#E8E4DC]"
+            style={circleStyle}
+          >
+            <Image src="/icons/lucide_cooking-pot.svg" alt="مطبخ" width={24} height={24} />
+          </div>
+          <span className="text-xs text-[#000]">{kitchenLabel}</span>
         </div>
-        <div className={circleBase} title={bathroomsLabel}>
-          <BathIcon className="h-[22px] w-[22px]" />
+        <div className="flex flex-col items-center">
+          <div
+            className="w-12 h-12 rounded-full flex items-center justify-center mb-2 bg-[#F3F1EB] border border-[#E8E4DC]"
+            style={circleStyle}
+          >
+            <Image src="/icons/bathroom.svg" alt="حمام" width={24} height={24} />
+          </div>
+          <span className="text-xs text-[#000]">{bathroomsLabel}</span>
         </div>
-        <div className={circleBase} title={bedroomsLabel}>
-          <BedIcon className="h-[22px] w-[22px]" />
+        <div className="flex flex-col items-center">
+          <div
+            className="w-12 h-12 rounded-full flex items-center justify-center mb-2 bg-[#F3F1EB] border border-[#E8E4DC]"
+            style={circleStyle}
+          >
+            <Image src="/icons/ion_bed-outline.svg" alt="غرف" width={24} height={24} />
+          </div>
+          <span className="text-xs text-[#000]">{bedroomsLabel}</span>
         </div>
-        <div className={circleBase} title={areaLabel}>
-          <RulerIcon className="h-[22px] w-[22px]" />
+        <div className="flex flex-col items-center">
+          <div
+            className="w-12 h-12 rounded-full flex items-center justify-center mb-2 bg-[#F3F1EB] border border-[#E8E4DC]"
+            style={circleStyle}
+          >
+            <Image src="/icons/area.svg" alt="المساحة" width={24} height={24} />
+          </div>
+          <span className="text-xs text-[#000]">{areaLabel}</span>
         </div>
       </div>
     </div>

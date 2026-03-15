@@ -1,11 +1,13 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
+import { ArrowRight } from 'lucide-react';
 import { usePropertyDetail } from '@/hooks/useProperties';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '@/lib/config';
 import { contractService } from '@/services/contractService';
+import HeaderCard from '@/components/ui/HeaderCard';
 
 export default function PropertyDetailPage() {
   const params = useParams();
@@ -119,7 +121,20 @@ export default function PropertyDetailPage() {
 
   return (
     <div className="min-h-screen bg-[#FDFDFD]" dir="rtl">
-      {/* Full-height Property Image */}
+      <HeaderCard
+        title="تفاصيل الوحدة"
+        leftButton={
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            aria-label="رجوع"
+          >
+            <ArrowRight className="w-5 h-5 text-gray-900" />
+          </button>
+        }
+      />
+      {/* Property Image */}
       <div className="relative h-[300px]">
         {coverImage ? (
           <Image
@@ -134,24 +149,6 @@ export default function PropertyDetailPage() {
             <span className="text-gray-400">لا توجد صورة</span>
           </div>
         )}
-
-        {/* Header Overlay with Glass Effect */}
-        <div className="absolute top-0 left-0 right-0 bg-[#ffffff64] backdrop-transparent-sm rounded-b-[30px]"
-          style={{ boxShadow: "0px 2px 4px #BEBEBE40" }}>
-          <div className="flex items-center py-4">
-            <button
-              onClick={() => router.back()}
-              className="mr-5"
-              aria-label="رجوع"
-            >
-              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
-              </svg>
-            </button>
-            <h1 className="text-lg font-normal flex-1 text-center -ml-1">تفاصيل الوحدة</h1>
-          </div>
-        </div>
-
       </div>
 
       {/* Content Section with Rounded Top */}
