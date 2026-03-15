@@ -65,8 +65,8 @@ export const navConfigs = {
     rightNavItems: [navItems.appointments] as NavItem[],
   },
   resident: {
-    leftNavItems: [navItems.home, navItems.services] as NavItem[],
-    rightNavItems: [navItems.myUnit, navItems.profile] as NavItem[],
+    leftNavItems: [navItems.home, navItems.myUnit] as NavItem[],
+    rightNavItems: [navItems.services, navItems.profile] as NavItem[],
   },
   user: {
     leftNavItems: [navItems.home, navItems.properties] as NavItem[],

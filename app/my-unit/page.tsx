@@ -254,8 +254,8 @@ export default function MyUnitPage() {
             paymentDueDays={15}
             userType="resident"
             remainingBalance={remainingBalance > 0 ? remainingBalance : undefined}
-            payNowHref={bookingForContract?._id ? `/my-bookings/${bookingForContract._id}` : undefined}
-            payNowDisabled={!bookingForContract?._id}
+            payNowHref={propertyIdForNearby && activeContract?._id ? `/property/${propertyIdForNearby}/booking/checkout?contractId=${activeContract._id}` : undefined}
+            payNowDisabled={!propertyIdForNearby || !activeContract?._id}
             className="w-full"
           />
 
