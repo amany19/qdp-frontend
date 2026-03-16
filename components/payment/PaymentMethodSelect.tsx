@@ -30,7 +30,7 @@ export function PaymentMethodSelect({ selectedMethod, onSelect }: PaymentMethodS
           }`}
         >
           <div className="flex items-center gap-3">
-            <Image src={method.logo} alt={method.name} width={50} height={50} />
+            <Image src={method.logo} alt={method.name} width={50} height={50} unoptimized />
             <span className="font-medium text-gray-900">{method.name}</span>
           </div>
           <div

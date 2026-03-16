@@ -9,6 +9,7 @@ import { Input, Button } from '@/components/forms';
 import { PhoneInputWithCountryCode } from '@/components/forms/PhoneInputWithCountryCode';
 import { authService } from '@/services/authService';
 import { useAuthStore } from '@/store/authStore';
+import { API_BASE_URL } from '@/lib/config';
 import toast, { Toaster } from 'react-hot-toast';
 import { getCountryCallingCode } from 'react-phone-number-input';
 
@@ -66,8 +67,7 @@ export default function LoginPage() {
     }
   };
 const handleGoogleLogin = () => {
-
-  window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google`;
+  window.location.href = `${API_BASE_URL}/auth/google`;
 };
   return (
     <div className="min-h-screen bg-white" dir="rtl">

@@ -3,14 +3,13 @@
 import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import Image from 'next/image';
 import {
   getApplianceById,
   bookAppliance,
   CreateBookingDto,
   getRentalDurationLabel,
 } from '@/services/appliancesService';
-import { getUploadImageUrl } from '@/lib/config';
+import { ApplianceImage } from '@/components/ui/ApplianceImage';
 import { useAuthStore } from '@/store/authStore';
 import { CalendarPicker } from '@/components/ui/CalendarPicker';
 import SuccessPopup from '@/components/ui/SuccessPopup';
@@ -120,8 +119,8 @@ export default function BookAppliancePage() {
         <div className="mb-6 p-5 bg-white rounded-xl border border-gray-100">
           <div className="flex items-center gap-4">
             <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-              <Image
-                src={getUploadImageUrl(appliance.images?.[0]) || '/images/placeholder-appliance.jpg'}
+              <ApplianceImage
+                imageUrl={appliance.images?.[0]}
                 alt={appliance.nameAr}
                 fill
                 className="object-cover"

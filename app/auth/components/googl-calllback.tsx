@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
+import { API_BASE_URL } from '@/lib/config';
 
 export default function GoogleCallback() {
   const router = useRouter();
@@ -22,7 +23,7 @@ export default function GoogleCallback() {
     const fetchToken = async () => {
       try {
         
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/google/callback?code=${code}`, {
+        const res = await fetch(`${API_BASE_URL}/auth/google/callback?code=${code}`, {
           method: 'GET',
           credentials: 'include', 
         });

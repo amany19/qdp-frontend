@@ -4,15 +4,16 @@ import React, { useState, useEffect } from 'react';
 import { useAdminAuthStore } from '../../../store/adminAuthStore';
 import { useRouter } from 'next/navigation';
 import ds from '../../../styles/adminDesignSystem';
-import { API_BASE_URL } from '@/lib/config';
+import { API_BASE_URL, getUploadImageUrl } from '@/lib/config';
 
+/** Backend property status: pending, active, sold, rented, archived, rejected */
 interface Property {
   _id: string;
   title: string;
   propertyType: string;
   category: string;
   price: number;
-  status: 'pending' | 'active' | 'inactive';
+  status: 'pending' | 'active' | 'sold' | 'rented' | 'archived' | 'rejected';
   location: {
     area: string;
     city: string;
@@ -228,17 +229,23 @@ export default function AdminPropertiesPage() {
     const styles: Record<string, string> = {
       pending: 'bg-yellow-100 text-yellow-800',
       active: 'bg-green-100 text-green-800',
-      inactive: 'bg-gray-100 text-gray-800',
+      rejected: 'bg-red-100 text-red-800',
+      sold: 'bg-gray-100 text-gray-800',
+      rented: 'bg-blue-100 text-blue-800',
+      archived: 'bg-gray-100 text-gray-600',
     };
 
     const labels: Record<string, string> = {
       pending: 'قيد المراجعة',
       active: 'نشط',
-      inactive: 'غير نشط',
+      rejected: 'مرفوض',
+      sold: 'مباع',
+      rented: 'مؤجر',
+      archived: 'أرشيف',
     };
 
     return (
-      <span className={`px-3 py-1 text-xs font-medium rounded-full ${styles[status] || ''}`}>
+      <span className={`px-3 py-1 text-xs font-medium rounded-full ${styles[status] || 'bg-gray-100 text-gray-800'}`}>
         {labels[status] || status}
       </span>
     );
@@ -331,7 +338,10 @@ export default function AdminPropertiesPage() {
               <option value="all">الكل</option>
               <option value="pending">قيد المراجعة</option>
               <option value="active">نشط</option>
-              <option value="inactive">غير نشط</option>
+              <option value="rejected">مرفوض</option>
+              <option value="sold">مباع</option>
+              <option value="rented">مؤجر</option>
+              <option value="archived">أرشيف</option>
             </select>
           </div>
 
@@ -386,7 +396,7 @@ export default function AdminPropertiesPage() {
                       <div className="flex items-center gap-3">
                         <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
                           {property.images?.[0] ? (
-                            <img src={property.images[0].url} alt={property.title} className="w-full h-full object-cover" />
+                            <img src={getUploadImageUrl(property.images[0].url)} alt={property.title} className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
                               لا صورة

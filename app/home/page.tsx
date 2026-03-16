@@ -47,8 +47,6 @@ export default function HomePage() {
     },
   });
 
-  console.log(lat, lng, city);
-
   return (
     <RoleGuard allowedRoles={['resident', 'user', 'guest']} >
       <PageWrapper>

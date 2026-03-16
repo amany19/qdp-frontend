@@ -136,7 +136,7 @@ function CheckoutContent() {
   const handleSuccessPopupClose = () => {
 
     setShowSuccess(false);
-    router.push('home')
+    router.push('/home')
     // Navigate to success page after popup closes
     // if (paymentId) {
     //   router.push(`/property/booking/success?paymentId=${paymentId}&type=listing`);

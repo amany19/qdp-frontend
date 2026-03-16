@@ -130,16 +130,15 @@ export default function RenewalPage() {
             <span className="text-base sm:text-lg font-bold text-gray-900">
               {title || 'وحدة سكنية'}
             </span>
-            {isPopulated && (property as { images?: { url: string; isCover?: boolean }[] }).images?.length > 0 && (
-              <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
-                <Image
-                  src={((property as { images: { url: string }[] }).images.find((i: { isCover?: boolean }) => i.isCover) || (property as { images: { url: string }[] }).images[0])?.url ?? ''}
-                  alt=""
-                  fill
-                  className="object-cover"
-                />
-              </div>
-            )}
+            {isPopulated && (() => {
+              const imgs = (property as { images?: { url: string; isCover?: boolean }[] }).images;
+              const url = (imgs?.find((i: { isCover?: boolean }) => i.isCover) || imgs?.[0])?.url;
+              return url ? (
+                <div className="relative w-10 h-10 rounded-lg overflow-hidden flex-shrink-0">
+                  <Image src={url} alt="" fill className="object-cover" unoptimized />
+                </div>
+              ) : null;
+            })()}
           </div>
 
           <div className="flex items-center gap-1 mb-3 sm:mb-4">

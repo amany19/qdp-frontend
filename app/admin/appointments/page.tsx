@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAdminAuthStore } from '../../../store/adminAuthStore';
 import { useRouter } from 'next/navigation';
 import ds from '../../../styles/adminDesignSystem';
-import { API_BASE_URL } from '@/lib/config';
+import { API_BASE_URL, getUploadImageUrl } from '@/lib/config';
 
 interface Appointment {
   _id: string;
@@ -399,7 +399,7 @@ export default function AdminAppointmentsPage() {
                         <div className="w-16 h-16 rounded-lg overflow-hidden bg-gray-200 flex-shrink-0">
                           {appointment.propertyId?.images?.[0] ? (
                             <img
-                              src={appointment.propertyId.images[0].url}
+                              src={getUploadImageUrl(appointment.propertyId.images[0].url)}
                               alt={appointment.propertyId.title}
                               className="w-full h-full object-cover"
                             />

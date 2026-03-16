@@ -100,7 +100,7 @@ function AddDeviceCheckoutContent() {
       <SuccessPopup
         isOpen={showSuccess}
         title="تم الدفع بنجاح"
-        description="تم نشر إعلان الجهاز. سيظهر في قائمة الأجهزة للإيجار."
+        description="تم الطلب سيتم  نشر إعلانك بعد موافقة المسئولين"
         onClose={handleSuccessClose}
         icon="success"
       />

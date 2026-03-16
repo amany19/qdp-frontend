@@ -3,14 +3,13 @@ import { BottomNavigation } from '@/components/ui/BottomNavigationPlus';
 
 
 export default function GuestLayout({ children }: { children: React.ReactNode }) {
-    const leftNavItems = [
-    { href: "/home", label: "الرئيسية", icon: "/images/bottom-nav/home.png" },
-    { href: "/properties", label: "الوحدات", icon: "/images/bottom-nav/building-4.png" },
+  const leftNavItems = [
+    { href: "/home", label: "الرئيسية", icon: "/icons/home-icon.svg" },
+    { href: "/properties", label: "الوحدات", icon: "/icons/building-icon.svg" },
   ];
 
   const rightNavItems = [
-    { href: "/appointments", label: "مواعيدي", icon: "/images/bottom-nav/my-appointments.png" },
-  
+    { href: "/appointments", label: "مواعيدي", icon: "/icons/calender-icon.svg" },
   ];
 
   return (

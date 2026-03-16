@@ -1,9 +1,8 @@
 'use client';
 
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Appliance, getApplianceTypeLabel } from '@/services/appliancesService';
-import { getUploadImageUrl } from '@/lib/config';
+import { ApplianceImage } from '@/components/ui/ApplianceImage';
 
 interface ApplianceCardProps {
   appliance: Appliance;
@@ -11,7 +10,6 @@ interface ApplianceCardProps {
 
 export function ApplianceCard({ appliance }: ApplianceCardProps) {
   const router = useRouter();
-  const imageSrc = getUploadImageUrl(appliance.images?.[0]) || '/images/placeholder-appliance.jpg';
 
   return (
     <div
@@ -20,8 +18,8 @@ export function ApplianceCard({ appliance }: ApplianceCardProps) {
     >
       {/* Image */}
       <div className="relative h-48 bg-gray-100">
-        <Image
-          src={imageSrc}
+        <ApplianceImage
+          imageUrl={appliance.images?.[0]}
           alt={appliance.nameAr}
           fill
           className="object-cover"

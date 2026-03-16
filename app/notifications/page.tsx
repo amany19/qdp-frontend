@@ -56,6 +56,54 @@ const getNotificationIcon = (type: string) => {
           </svg>
         </div>
       );
+    case 'contract_signed_by_admin':
+      return (
+        <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+          <svg className="w-6 h-6 text-green-600" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+          </svg>
+        </div>
+      );
+    case 'listing_approved':
+    case 'property_approved':
+      return (
+        <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+          <svg className="w-6 h-6 text-green-600" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+          </svg>
+        </div>
+      );
+    case 'listing_rejected':
+    case 'property_rejected':
+    case 'booking_rejected':
+    case 'transfer_rejected':
+    case 'rental_rejected':
+    case 'appointment_cancelled':
+      return (
+        <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+          <svg className="w-6 h-6 text-red-600" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
+        </div>
+      );
+    case 'booking_approved':
+    case 'transfer_approved':
+    case 'rental_approved':
+      return (
+        <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+          <svg className="w-6 h-6 text-green-600" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+          </svg>
+        </div>
+      );
+    case 'transfer_request_more_info':
+      return (
+        <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+          <svg className="w-6 h-6 text-amber-600" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+          </svg>
+        </div>
+      );
     default:
       return (
         <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">

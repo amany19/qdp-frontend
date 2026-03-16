@@ -45,7 +45,8 @@ export interface PropertyListing {
     area: string;
   };
   images: Array<{ url: string; isCover: boolean }>;
-  status: 'draft' | 'pending_approval' | 'active' | 'inactive';
+  /** Backend listing: pending, active, expired, cancelled, rejected. pending_approval used when property.status is pending. */
+  status: 'pending' | 'active' | 'expired' | 'cancelled' | 'rejected' | 'pending_approval' | 'draft' | 'inactive';
   createdAt: string;
 }
 

@@ -5,7 +5,7 @@ import { useAdminAuthStore } from '../../../../store/adminAuthStore';
 import { useParams, useRouter } from 'next/navigation';
 import ds from '../../../../styles/adminDesignSystem';
 import Image from 'next/image';
-import { API_BASE_URL } from '@/lib/config';
+import { API_BASE_URL, getUploadImageUrl } from '@/lib/config';
 
 interface Property {
   _id: string;
@@ -15,7 +15,7 @@ interface Property {
   category: string;
   price: number;
   currency: string;
-  status: 'pending' | 'active' | 'inactive';
+  status: 'pending' | 'active' | 'rejected' | 'sold' | 'rented' | 'archived';
   location: {
     area: string;
     city: string;
@@ -177,7 +177,7 @@ export default function AdminPropertyDetailPage() {
           </h1>
         </div>
 
-        {/* Status Badge */}
+        {/* Status Badge — aligned with backend: pending, active, rejected, sold, rented, archived */}
         <div>
           {property.status === 'pending' && (
             <span className="px-4 py-2 rounded-full bg-yellow-100 text-yellow-800 font-semibold">
@@ -189,9 +189,24 @@ export default function AdminPropertyDetailPage() {
               نشط
             </span>
           )}
-          {property.status === 'inactive' && (
+          {property.status === 'rejected' && (
+            <span className="px-4 py-2 rounded-full bg-red-100 text-red-800 font-semibold">
+              مرفوض
+            </span>
+          )}
+          {property.status === 'sold' && (
             <span className="px-4 py-2 rounded-full bg-gray-100 text-gray-800 font-semibold">
-              غير نشط
+              مباع
+            </span>
+          )}
+          {property.status === 'rented' && (
+            <span className="px-4 py-2 rounded-full bg-blue-100 text-blue-800 font-semibold">
+              مؤجر
+            </span>
+          )}
+          {property.status === 'archived' && (
+            <span className="px-4 py-2 rounded-full bg-gray-100 text-gray-600 font-semibold">
+              أرشيف
             </span>
           )}
         </div>
@@ -205,10 +220,11 @@ export default function AdminPropertyDetailPage() {
             <div className="relative h-96 rounded-lg overflow-hidden mb-4">
               {property.images[currentImageIndex] ? (
                 <Image
-                  src={property.images[currentImageIndex].url}
+                  src={getUploadImageUrl(property.images[currentImageIndex].url)}
                   alt={property.title}
                   fill
                   className="object-cover"
+                  unoptimized
                 />
               ) : (
                 <div className="w-full h-full bg-gray-200 flex items-center justify-center">
@@ -228,7 +244,7 @@ export default function AdminPropertyDetailPage() {
                       currentImageIndex === index ? 'ring-2 ring-black' : ''
                     }`}
                   >
-                    <Image src={img.url} alt={`صورة ${index + 1}`} fill className="object-cover" />
+                    <Image src={getUploadImageUrl(img.url)} alt={`صورة ${index + 1}`} fill className="object-cover" unoptimized />
                   </button>
                 ))}
               </div>
@@ -487,7 +503,7 @@ export default function AdminPropertyDetailPage() {
           </div>
 
           {/* Rejection Reason */}
-          {property.status === 'inactive' && property.rejectionReason && (
+          {property.status === 'rejected' && property.rejectionReason && (
             <div style={ds.components.glassCard} className="bg-red-50 border border-red-200">
               <h3 className="text-lg font-bold mb-2 text-red-800">سبب الرفض</h3>
               <p className="text-sm text-red-700">{property.rejectionReason}</p>

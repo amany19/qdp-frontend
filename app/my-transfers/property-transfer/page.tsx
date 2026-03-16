@@ -150,16 +150,21 @@ export default function PropertyTransferPage() {
             <div className="bg-white rounded-xl border border-gray-100 overflow-hidden p-4">
               <div className="flex gap-4">
                 <div className="relative w-20 h-20 rounded-lg bg-gray-200 shrink-0">
-                  {(selectedProperty.images?.find((img: any) => img.isCover) || selectedProperty.images?.[0]) ? (
-                    <Image
-                      src={(selectedProperty.images?.find((img: any) => img.isCover) || selectedProperty.images?.[0])?.url || ''}
-                      alt={selectedProperty.title}
-                      fill
-                      className="object-cover rounded-lg"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">لا صورة</div>
-                  )}
+                  {(() => {
+                    const img = selectedProperty.images?.find((i: any) => i.isCover) || selectedProperty.images?.[0];
+                    const url = img?.url;
+                    return url ? (
+                      <Image
+                        src={url}
+                        alt={selectedProperty.title}
+                        fill
+                        className="object-cover rounded-lg"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">لا صورة</div>
+                    );
+                  })()}
                 </div>
                 <div className="min-w-0 flex-1">
                   <h3 className="font-semibold text-gray-900 truncate">{selectedProperty.title}</h3>

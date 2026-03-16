@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
 import ConditionalMobileWrapper from '@/components/ConditionalMobileWrapper';
+import NotificationSocketProvider from '@/components/providers/NotificationSocketProvider';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -19,9 +20,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ConditionalMobileWrapper>
-        {children}
-      </ConditionalMobileWrapper>
+      <NotificationSocketProvider>
+        <ConditionalMobileWrapper>
+          {children}
+        </ConditionalMobileWrapper>
+      </NotificationSocketProvider>
     </QueryClientProvider>
   );
 }

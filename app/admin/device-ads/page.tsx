@@ -60,11 +60,23 @@ export default function AdminDeviceAdsPage() {
     fetchListings();
   }, [token]);
 
-  const handleApprove = async (listingId: string) => {
+  const handleApprove = async (listingId: string | { _id?: string }) => {
     if (!token) return;
-    setActingId(listingId);
+    const id =
+      typeof listingId === 'string'
+        ? listingId
+        : (listingId && typeof listingId === 'object' && (listingId as any)._id != null)
+          ? String((listingId as any)._id)
+          : listingId != null
+            ? String(listingId)
+            : '';
+    if (!id || id === '[object Object]') {
+      toast.error('معرف الإعلان غير صالح');
+      return;
+    }
+    setActingId(id);
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/appliances/listings/${listingId}/approve`, {
+      const res = await fetch(`${API_BASE_URL}/admin/appliances/listings/${encodeURIComponent(id)}/approve`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -75,7 +87,7 @@ export default function AdminDeviceAdsPage() {
         toast.success('تم اعتماد الإعلان');
         await fetchListings();
       } else {
-        const err = await res.json();
+        const err = await res.json().catch(() => ({}));
         toast.error(err.message || 'فشل الاعتماد');
       }
     } catch (e: any) {
@@ -196,6 +208,7 @@ export default function AdminDeviceAdsPage() {
                       width={120}
                       height={100}
                       style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                      unoptimized
                     />
                   ) : (
                     <div

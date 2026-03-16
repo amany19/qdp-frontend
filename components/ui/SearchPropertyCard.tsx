@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { SERVER_BASE_URL } from '@/lib/config';
 
 interface Property {
@@ -37,10 +37,11 @@ interface Property {
 
 interface SearchPropertyCardProps {
   property: Property;
+  /** Set true for the first card above the fold (e.g. home) to fix LCP */
+  priority?: boolean;
 }
 
-export function SearchPropertyCard({ property }: SearchPropertyCardProps) {
-  const router = useRouter();
+export function SearchPropertyCard({ property, priority = false }: SearchPropertyCardProps) {
   const images = property.images ?? [];
   const coverImage = images.find((img) => img.isCover) || images[0];
   const imageSrc = coverImage?.url
@@ -49,17 +50,11 @@ export function SearchPropertyCard({ property }: SearchPropertyCardProps) {
       : `${SERVER_BASE_URL}${coverImage.url}`
     : '';
 
-  const handleCardClick = () => {
-    router.push(`/property/${property._id}`);
-  };
+  const href = property._id ? `/property/${property._id}` : '#';
 
-  return (
-    <div
-      onClick={handleCardClick}
-      className="relative w-full cursor-pointer"
-      dir="rtl"
-    >
-      {/* Property Image */}
+  const cardContent = (
+    <>
+      {/* Property Image - unoptimized to show original upload quality */}
       <div className="relative w-full h-[240px] rounded-[5px] overflow-hidden">
         {coverImage && imageSrc ? (
           <Image
@@ -67,6 +62,8 @@ export function SearchPropertyCard({ property }: SearchPropertyCardProps) {
             alt={property.title ?? 'Property'}
             fill
             className="object-cover"
+            priority={priority}
+            unoptimized
           />
         ) : (
           <div className="w-full h-full bg-gray-200 flex items-center justify-center">
@@ -133,6 +130,20 @@ export function SearchPropertyCard({ property }: SearchPropertyCardProps) {
           </div>
         )}
       </div>
-    </div>
+    </>
+  );
+
+  if (!property._id) {
+    return <div className="relative w-full" dir="rtl">{cardContent}</div>;
+  }
+
+  return (
+    <Link
+      href={href}
+      className="relative w-full block cursor-pointer hover:opacity-95 transition-opacity"
+      dir="rtl"
+    >
+      {cardContent}
+    </Link>
   );
 }

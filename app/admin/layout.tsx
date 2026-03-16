@@ -45,12 +45,7 @@ export default function AdminRootLayout({
           borderRadius: '50%',
           animation: 'spin 1s linear infinite',
         }}></div>
-        <style jsx>{`
-          @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-        `}</style>
+        <style dangerouslySetInnerHTML={{ __html: '@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}' }} />
       </div>
     );
   }
@@ -73,12 +68,7 @@ export default function AdminRootLayout({
           borderRadius: '50%',
           animation: 'spin 1s linear infinite',
         }}></div>
-        <style jsx>{`
-          @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-        `}</style>
+        <style dangerouslySetInnerHTML={{ __html: '@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}' }} />
       </div>
     );
   }

@@ -87,7 +87,7 @@ export default function AddDeviceStep1Page() {
         <HeaderCard
           title="إضافة جهاز - الخطوة ١"
           leftButton={
-            <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <button  onClick={() => router.push('/appliances')}className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
               <ArrowRight className="w-5 h-5" />
             </button>
           }
@@ -99,7 +99,7 @@ export default function AddDeviceStep1Page() {
             <div className="flex flex-wrap gap-3">
               {imagePreviews.map((preview, index) => (
                 <div key={index} className="relative w-24 h-24 rounded-lg overflow-hidden border border-gray-200 bg-gray-100">
-                  <Image src={preview} alt="" fill className="object-cover" />
+                  <Image src={preview} alt="" fill className="object-cover" unoptimized />
                   <button
                     type="button"
                     onClick={() => handleRemoveImage(index)}

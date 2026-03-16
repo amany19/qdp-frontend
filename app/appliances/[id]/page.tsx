@@ -3,13 +3,12 @@
 import { useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import Image from 'next/image';
 import {
   getApplianceById,
   incrementApplianceView,
 } from '@/services/appliancesService';
-import { getUploadImageUrl } from '@/lib/config';
 import { ApplianceDetailsSkeleton } from '@/components/ui/ApplianceDetailsSkeleton';
+import { ApplianceImage } from '@/components/ui/ApplianceImage';
 import { FadeIn } from '@/components/ui/FadeIn';
 import RoleGuard from '@/components/auth/RoleGuard';
 
@@ -74,8 +73,8 @@ export default function ApplianceDetailsPage() {
 
         {/* Image */}
         <div className="relative h-[277px] mb-4 mx-5">
-          <Image
-            src={getUploadImageUrl(appliance.images?.[0]) || '/images/placeholder-appliance.jpg'}
+          <ApplianceImage
+            imageUrl={appliance.images?.[0]}
             alt={appliance.nameAr}
             fill
             className="object-cover rounded-lg"

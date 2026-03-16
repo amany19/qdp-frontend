@@ -9,6 +9,8 @@ import { ApplianceGridSkeleton } from '@/components/ui/ApplianceCardSkeleton';
 import { FadeIn } from '@/components/ui/FadeIn';
 import RoleGuard from '@/components/auth/RoleGuard';
 import { BottomNavigation } from '@/components/ui/BottomNavigation';
+import HeaderCard from '@/components/ui/HeaderCard';
+import { ArrowRight } from 'lucide-react';
 
 export default function AppliancesPage() {
 
@@ -36,18 +38,14 @@ export default function AppliancesPage() {
     <div className="min-h-screen bg-white pb-32" dir="rtl">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-white border-b border-gray-100">
-        <div className="flex items-center gap-4 px-4 py-4">
-          <button
-            onClick={() => router.back()}
-            className="p-2 -mr-2"
-            aria-label="رجوع"
-          >
-            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
-            </svg>
-          </button>
-          <h1 className="text-xl font-bold flex-1">أجهزة للإيجار</h1>
-        </div>
+        <HeaderCard
+          title="أجهزة للإيجار"
+          leftButton={
+            <button  onClick={() => router.push('/home')}className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              <ArrowRight className="w-5 h-5" />
+            </button>
+          }
+        />
 
         {/* Filter Tabs */}
         <div className="overflow-x-auto hide-scrollbar">

@@ -77,8 +77,6 @@ export default function AddPropertyStep3() {
         return;
       }
 
-      let price = 0;
-
       const availableFor = step1Data?.availableFor;
 
       if (!availableFor) {
@@ -87,15 +85,21 @@ export default function AddPropertyStep3() {
         return;
       }
 
-      if (availableFor.sale) {
-        price = availableFor.salePrice;
-      }
+      // category from step 1: 'rent' | 'sale' | 'both' (backend accepts all three)
+      const category = step1Data.category;
+      const price =
+        category === 'sale'
+          ? availableFor.salePrice
+          : category === 'rent'
+            ? availableFor.rentPrice
+            : (availableFor.salePrice ?? availableFor.rentPrice ?? 0);
+
       const propertyData = {
         title: step1Data.title,
         description: step1Data.description,
         propertyType: step1Data.propertyType,
-        category: step1Data.category,
-        price: price,
+        category,
+        price,
         currency: 'QAR',
         availableFor: step1Data.availableFor,
         specifications: {
@@ -116,7 +120,11 @@ export default function AddPropertyStep3() {
           landmark: step2Data.landmark || undefined,
           coordinates: {
             type: 'Point',
-            coordinates: [51.5074, 25.2854],
+            // GeoJSON: [longitude, latitude]. Use step-2 picker values or fallback to Doha.
+            coordinates: [
+              typeof step2Data.longitude === 'number' ? step2Data.longitude : 51.5074,
+              typeof step2Data.latitude === 'number' ? step2Data.latitude : 25.2854,
+            ],
           },
         },
         images: [],

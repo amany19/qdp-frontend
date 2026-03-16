@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useState } from 'react';
 import { useAddToFavorites, useRemoveFromFavorites } from '@/hooks/useProperties';
 
@@ -44,14 +44,15 @@ interface PropertyCardProps {
 }
 
 export function PropertyCard({ property, onFavoriteToggle, compact = false }: PropertyCardProps) {
-  const router = useRouter();
   const [isFavorited, setIsFavorited] = useState(property.isFavorited || false);
   const addToFavorites = useAddToFavorites();
   const removeFromFavorites = useRemoveFromFavorites();
 
   const coverImage = property.images.find((img) => img.isCover) || property.images[0];
+  const href = property._id ? `/property/${property._id}` : '#';
 
   const handleFavoriteClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
 
     if (isFavorited) {
@@ -64,16 +65,8 @@ export function PropertyCard({ property, onFavoriteToggle, compact = false }: Pr
     onFavoriteToggle?.();
   };
 
-  const handleCardClick = () => {
-    router.push(`/property/${property._id}`);
-  };
-
-  return (
-    <div
-      onClick={handleCardClick}
-      className="bg-white rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-      dir="rtl"
-    >
+  const cardContent = (
+    <>
       {/* Image */}
       <div className={`relative ${compact ? 'h-40' : 'h-48'}`}>
         {coverImage ? (
@@ -82,6 +75,7 @@ export function PropertyCard({ property, onFavoriteToggle, compact = false }: Pr
             alt={property.title}
             fill
             className="object-cover"
+            unoptimized
           />
         ) : (
           <div className="w-full h-full bg-gray-200 flex items-center justify-center">
@@ -125,8 +119,9 @@ export function PropertyCard({ property, onFavoriteToggle, compact = false }: Pr
 
         {/* Favorite Button - Top Right */}
         <button
+          type="button"
           onClick={handleFavoriteClick}
-          className="absolute top-2 right-2 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-white transition-all"
+          className="absolute top-2 right-2 w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-white transition-all z-10"
         >
           {isFavorited ? (
             <span className="text-red-500">❤️</span>
@@ -232,6 +227,20 @@ export function PropertyCard({ property, onFavoriteToggle, compact = false }: Pr
           )}
         </div>
       </div>
-    </div>
+    </>
+  );
+
+  if (!property._id) {
+    return <div className="bg-white rounded-lg overflow-hidden" dir="rtl">{cardContent}</div>;
+  }
+
+  return (
+    <Link
+      href={href}
+      className="bg-white rounded-lg overflow-hidden block cursor-pointer hover:shadow-lg transition-shadow"
+      dir="rtl"
+    >
+      {cardContent}
+    </Link>
   );
 }

@@ -3,7 +3,26 @@ import { api } from './api';
 export interface Notification {
   _id: string;
   userId: string;
-  type: 'appointment_confirmed' | 'payment_due' | 'property_match' | 'service_completed' | 'contract_expiring' | 'message_received';
+  type:
+    | 'appointment_confirmed'
+    | 'appointment_cancelled'
+    | 'payment_due'
+    | 'property_match'
+    | 'service_completed'
+    | 'contract_expiring'
+    | 'message_received'
+    | 'contract_signed_by_admin'
+    | 'listing_approved'
+    | 'listing_rejected'
+    | 'property_approved'
+    | 'property_rejected'
+    | 'booking_approved'
+    | 'booking_rejected'
+    | 'transfer_approved'
+    | 'transfer_rejected'
+    | 'transfer_request_more_info'
+    | 'rental_approved'
+    | 'rental_rejected';
   title: string;
   message: string;
   icon: string;

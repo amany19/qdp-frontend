@@ -1,10 +1,26 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { notificationService, Notification } from '@/services/notificationService';
+import { useOnNotification } from '@/components/providers/NotificationSocketProvider';
+import { useAuthStore } from '@/store/authStore';
 
 export const useNotifications = () => {
   const queryClient = useQueryClient();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const hasHydrated = useAuthStore((s) => s.hasHydrated);
 
-  // Get all notifications
+  const enabled = Boolean(hasHydrated && isAuthenticated);
+
+  const invalidateNotificationQueries = () => {
+    queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    queryClient.invalidateQueries({ queryKey: ['notifications', 'unread'] });
+    queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
+  };
+
+  useOnNotification(() => {
+    if (enabled) invalidateNotificationQueries();
+  });
+
+  // Run only when authenticated (guests: no API calls, no 401s)
   const {
     data: notifications = [],
     isLoading,
@@ -13,23 +29,22 @@ export const useNotifications = () => {
   } = useQuery<Notification[]>({
     queryKey: ['notifications'],
     queryFn: notificationService.getAll,
+    enabled,
   });
 
-  // Get unread notifications
   const { data: unreadNotifications = [] } = useQuery<Notification[]>({
     queryKey: ['notifications', 'unread'],
     queryFn: notificationService.getUnread,
+    enabled,
   });
 
-  // Get unread count with auto-refresh every 30 seconds
   const { data: unreadCountData } = useQuery<{ count: number }>({
     queryKey: ['notifications', 'unread-count'],
     queryFn: notificationService.getUnreadCount,
-    refetchInterval: 30000, // Refresh every 30 seconds
-    refetchIntervalInBackground: true, // Continue refreshing even when tab is in background
+    enabled,
   });
 
-  const unreadCount = unreadCountData?.count || 0;
+  const unreadCount = enabled ? (unreadCountData?.count ?? 0) : 0;
 
   // Mark as read mutation
   const markAsReadMutation = useMutation({

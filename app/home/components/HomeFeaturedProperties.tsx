@@ -62,9 +62,12 @@ export default function HomeFeaturedProperties({
 
   return (
     <div className="px-4 overflow-x-auto hide-scrollbar flex gap-4 pb-2">
-      {list.map((property) => (
+      {list.map((property, index) => (
         <div key={property._id} className="min-w-[280px] flex-shrink-0">
-          <SearchPropertyCard property={property as Parameters<typeof SearchPropertyCard>[0]['property']} />
+          <SearchPropertyCard
+            property={property as Parameters<typeof SearchPropertyCard>[0]['property']}
+            priority={index === 0}
+          />
         </div>
       ))}
     </div>

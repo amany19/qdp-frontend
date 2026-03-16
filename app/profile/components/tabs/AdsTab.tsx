@@ -88,73 +88,112 @@ function EmptyAdsState() {
   );
 }
 
-function AdCard({ ad }: { ad: PropertyListing }) {
+/** API returns listing with propertyId populated; support both shapes for display and link. */
+function AdCard({ ad }: { ad: PropertyListing & { propertyId?: { _id?: string; title?: string; titleAr?: string; status?: string; images?: Array<{ url: string; isCover?: boolean }>; location?: { city?: string; area?: string }; price?: number; category?: string; specifications?: { areaSqm?: number; bedrooms?: number; bathrooms?: number } } } }) {
   const router = useRouter();
-  
-  const coverImage = ad.images.find((img) => img.isCover) || ad.images[0];
+  const prop = ad.propertyId && typeof ad.propertyId === 'object' ? ad.propertyId : null;
+  const propertyId = prop?._id ?? (typeof (ad as any).propertyId === 'string' ? (ad as any).propertyId : null);
+  const title = prop?.title ?? ad.title;
+  const titleAr = prop?.titleAr ?? ad.titleAr;
+  const images = prop?.images ?? ad.images ?? [];
+  const location = prop?.location ?? ad.location;
+  const price = prop?.price ?? ad.price;
+  const listingType = prop?.category ?? (ad as any).listingType;
+  const specs = prop?.specifications;
+  const area = specs?.areaSqm ?? ad.area;
+  const bedrooms = specs?.bedrooms ?? ad.bedrooms;
+  const bathrooms = specs?.bathrooms ?? ad.bathrooms;
+  // Default status for user-created property: show "pending admin approval" when property is pending
+  const displayStatus = prop?.status === 'pending' ? 'pending_approval' : ad.status;
+
+  const coverImage = Array.isArray(images) && images.length > 0
+    ? (images.find((img: { isCover?: boolean }) => img.isCover) || images[0])
+    : undefined;
+  const imageSrc = coverImage?.url
+    ? (coverImage.url.startsWith('http') ? coverImage.url : getUploadImageUrl(coverImage.url))
+    : '';
 
   return (
     <div
-      onClick={() => router.push(`/property/${ad._id}`)}
+      onClick={() => {
+        const id = propertyId || ad._id;
+        if (id) router.push(`/property/${id}`);
+      }}
       className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
     >
       {/* Property Image */}
       <div className="relative h-48 w-full bg-gray-200">
-        {coverImage && (
+        {imageSrc ? (
           <Image
-            src={coverImage.url}
-            alt={ad.titleAr || ad.title}
+            src={imageSrc}
+            alt={titleAr || title || 'عقار'}
             fill
             className="object-cover"
+            unoptimized
           />
-        )}
-        {/* Status Badge */}
+        ) : null}
         <div className="absolute top-3 right-3">
-          <StatusBadge status={ad.status} />
+          <StatusBadge status={displayStatus} />
         </div>
       </div>
 
       {/* Property Details */}
       <div className="p-4 space-y-2">
         <h3 className="font-bold text-lg text-gray-900">
-          {ad.titleAr || ad.title}
+          {titleAr || title || 'إعلان عقار'}
         </h3>
 
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <MapPin className="w-4 h-4" />
-          <span>
-            {ad.location.area}, {ad.location.city}
-          </span>
-        </div>
+        {location && (location.area || location.city) && (
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <MapPin className="w-4 h-4" />
+            <span>
+              {[location.area, location.city].filter(Boolean).join('، ') || '—'}
+            </span>
+          </div>
+        )}
 
         <div className="flex items-center justify-between pt-2 border-t border-gray-100">
           <div className="flex items-center gap-4 text-sm text-gray-600">
-            <span>{ad.area} متر</span>
-            <span>{ad.bedrooms} غرف</span>
-            <span>{ad.bathrooms} حمام</span>
+            {area != null && <span>{area} متر</span>}
+            {bedrooms != null && <span>{bedrooms} غرف</span>}
+            {bathrooms != null && <span>{bathrooms} حمام</span>}
           </div>
-          <div className="text-lg font-bold text-gray-900">
-            {ad.price.toLocaleString('ar-QA')} ريال
-          </div>
+          {price != null && (
+            <div className="text-lg font-bold text-gray-900">
+              {Number(price).toLocaleString('ar-QA')} ريال
+            </div>
+          )}
         </div>
 
-        <div className="flex items-center gap-2 pt-2">
-          <ListingTypeBadge type={ad.listingType} />
-        </div>
+        {listingType && (
+          <div className="flex items-center gap-2 pt-2">
+            <ListingTypeBadge type={listingType} />
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function StatusBadge({ status }: { status: PropertyListing['status'] }) {
-  const config = {
-    active: { bg: 'bg-green-100', text: 'text-green-700', label: 'نشط' },
-    pending_approval: { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'قيد المراجعة' },
-    draft: { bg: 'bg-gray-100', text: 'text-gray-700', label: 'مسودة' },
-    inactive: { bg: 'bg-red-100', text: 'text-red-700', label: 'غير نشط' },
-  };
+/** Badge config: listing statuses from backend (pending, active, expired, cancelled, rejected) + pending_approval when property is pending */
+const STATUS_BADGE_CONFIG: Record<string, { bg: string; text: string; label: string }> = {
+  active: { bg: 'bg-green-100', text: 'text-green-700', label: 'نشط' },
+  pending: { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'بانتظار الدفع' },
+  pending_approval: { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'قيد المراجعة' },
+  draft: { bg: 'bg-gray-100', text: 'text-gray-700', label: 'مسودة' },
+  inactive: { bg: 'bg-gray-100', text: 'text-gray-700', label: 'غير نشط' },
+  expired: { bg: 'bg-gray-100', text: 'text-gray-600', label: 'منتهي' },
+  cancelled: { bg: 'bg-gray-100', text: 'text-gray-700', label: 'ملغى' },
+  rejected: { bg: 'bg-red-100', text: 'text-red-700', label: 'مرفوض' },
+};
 
-  const { bg, text, label } = config[status];
+function StatusBadge({ status }: { status: PropertyListing['status'] }) {
+  const resolved = STATUS_BADGE_CONFIG[status] ?? {
+    bg: 'bg-gray-100',
+    text: 'text-gray-700',
+    label: status || '—',
+  };
+  const { bg, text, label } = resolved;
 
   return (
     <span className={`px-3 py-1 rounded-full text-xs font-medium ${bg} ${text}`}>
@@ -163,13 +202,19 @@ function StatusBadge({ status }: { status: PropertyListing['status'] }) {
   );
 }
 
-function ListingTypeBadge({ type }: { type: 'rent' | 'sale' }) {
-  const config = {
-    rent: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'للإيجار' },
-    sale: { bg: 'bg-purple-100', text: 'text-purple-700', label: 'للبيع' },
-  };
+const LISTING_TYPE_BADGE_CONFIG: Record<string, { bg: string; text: string; label: string }> = {
+  rent: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'للإيجار' },
+  sale: { bg: 'bg-purple-100', text: 'text-purple-700', label: 'للبيع' },
+  both: { bg: 'bg-indigo-100', text: 'text-indigo-700', label: 'إيجار وبيع' },
+};
 
-  const { bg, text, label } = config[type];
+function ListingTypeBadge({ type }: { type: string }) {
+  const resolved = LISTING_TYPE_BADGE_CONFIG[type] ?? {
+    bg: 'bg-gray-100',
+    text: 'text-gray-700',
+    label: type || '—',
+  };
+  const { bg, text, label } = resolved;
 
   return (
     <span className={`text-xs px-2 py-1 rounded ${bg} ${text}`}>
@@ -181,9 +226,10 @@ function ListingTypeBadge({ type }: { type: 'rent' | 'sale' }) {
 function DeviceAdCard({ deviceAd }: { deviceAd: ApplianceListingItem }) {
   const router = useRouter();
   const appliance = deviceAd.applianceId;
-  const applianceId = typeof appliance === 'object' && appliance !== null && '_id' in appliance
+  const rawId = typeof appliance === 'object' && appliance !== null && '_id' in appliance
     ? (appliance as { _id: string })._id
-    : String(deviceAd.applianceId);
+    : deviceAd.applianceId;
+  const applianceId = rawId != null ? String(rawId) : '';
   const nameAr = typeof appliance === 'object' && appliance !== null && 'nameAr' in appliance
     ? (appliance as { nameAr: string }).nameAr
     : '';
@@ -194,7 +240,7 @@ function DeviceAdCard({ deviceAd }: { deviceAd: ApplianceListingItem }) {
 
   return (
     <div
-      onClick={() => router.push(`/appliances/${applianceId}`)}
+      onClick={() => { if (applianceId) router.push(`/appliances/${applianceId}`); }}
       className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
     >
       <div className="relative h-48 w-full bg-gray-200 flex items-center justify-center">
@@ -205,6 +251,7 @@ function DeviceAdCard({ deviceAd }: { deviceAd: ApplianceListingItem }) {
             fill
             className="object-cover"
             sizes="(max-width: 768px) 100vw, 400px"
+            unoptimized
           />
         ) : (
           <Monitor className="w-16 h-16 text-gray-400" />

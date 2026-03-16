@@ -143,6 +143,7 @@ export default function PropertyDetailPage() {
             fill
             className="object-cover"
             priority
+            unoptimized
           />
         ) : (
           <div className="w-full h-full bg-gray-200 flex items-center justify-center">
@@ -267,14 +268,9 @@ export default function PropertyDetailPage() {
                 </div>
 
                 {/* Map */}
-                <div className="w-[182px] h-[138px] rounded-[5px] overflow-hidden flex-shrink-0">
-                  <Image
-                    src="/images/map.png"
-                    alt="map"
-                    width={182}
-                    height={138}
-                    className="object-cover w-full h-full"
-                  />
+                <div className="w-[182px] h-[138px] rounded-[5px] overflow-hidden flex-shrink-0 bg-gray-200 flex items-center justify-center">
+                  {/* Placeholder: /images/map.png not in public to avoid 400 */}
+                  <span className="text-gray-400 text-xs">خريطة</span>
                 </div>
               </div>
             </div>

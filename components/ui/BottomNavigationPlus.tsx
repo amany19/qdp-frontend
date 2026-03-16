@@ -71,6 +71,8 @@ export function BottomNavigationPlus({
             height={24}
             className="w-full h-full object-contain transition-all"
             style={{ opacity: active ? 1 : 0.6 }}
+            unoptimized
+            priority={item.href === '/home'}
           />
         </div>
         <span

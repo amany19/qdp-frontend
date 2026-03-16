@@ -251,7 +251,7 @@ export default function MyUnitPage() {
           {/* Card 1: Contract reminder (expiry + payment due) - same as profile my-unit tab */}
           <ContractReminderCard
             daysRemaining={daysUntilExpiry}
-            contractId={activeContract._id}
+            contractId={typeof activeContract._id === 'string' ? activeContract._id : String(activeContract._id ?? '')}
             paymentDueDays={15}
             userType="resident"
             remainingBalance={remainingBalance > 0 ? remainingBalance : undefined}

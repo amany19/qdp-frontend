@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import RoleGuard from '@/components/auth/RoleGuard';
+import LocationPicker, { type LocationCoords } from '@/components/add-property/LocationPicker';
 
 /**
  * Add Property - Step 2
@@ -34,6 +35,8 @@ export default function AddPropertyStep2() {
     parkingSpaces: 0,
     floorNumber: 0,
     totalFloors: 0,
+    latitude: null as number | null,
+    longitude: null as number | null,
   });
 
   const propertyConditions = [
@@ -56,11 +59,27 @@ export default function AddPropertyStep2() {
   };
 
   useEffect(() => {
-    // Check if step 1 data exists
     const step1Data = sessionStorage.getItem('addPropertyStep1');
     if (!step1Data) {
       toast.error('الرجاء إكمال الخطوة الأولى');
       router.push('/add-property/step-1');
+      return;
+    }
+    // Restore step2 from session (e.g. user went back from step 3)
+    const step2Raw = sessionStorage.getItem('addPropertyStep2');
+    if (step2Raw) {
+      try {
+        const step2 = JSON.parse(step2Raw);
+        setFormData((prev) => ({
+          ...prev,
+          ...step2,
+          propertyArea: step2.propertyArea?.toString() ?? prev.propertyArea,
+          latitude: step2.latitude ?? null,
+          longitude: step2.longitude ?? null,
+        }));
+      } catch {
+        // ignore
+      }
     }
   }, [router]);
 
@@ -74,7 +93,7 @@ export default function AddPropertyStep2() {
       return;
     }
 
-    // Store data in sessionStorage
+    // Store data in sessionStorage (include location coords if set)
     const step2Data = {
       propertyCondition: formData.propertyCondition,
       propertyArea: parseFloat(formData.propertyArea),
@@ -87,10 +106,20 @@ export default function AddPropertyStep2() {
       parkingSpaces: formData.parkingSpaces,
       floorNumber: formData.floorNumber,
       totalFloors: formData.totalFloors,
+      latitude: formData.latitude,
+      longitude: formData.longitude,
     };
     sessionStorage.setItem('addPropertyStep2', JSON.stringify(step2Data));
 
     router.push('/add-property/step-3');
+  };
+
+  const handleLocationChange = (coords: LocationCoords | null) => {
+    setFormData((prev) => ({
+      ...prev,
+      latitude: coords?.lat ?? null,
+      longitude: coords?.lng ?? null,
+    }));
   };
 
   return (
@@ -199,6 +228,25 @@ export default function AddPropertyStep2() {
             placeholder="مثال: بالقرب من مركز سيتي سنتر"
             className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-right focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
           />
+        </div>
+
+        {/* Location: map link / current location / map picker */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-900 mb-2 text-right">
+            موقع العقار على الخريطة
+          </label>
+          <LocationPicker
+            value={
+              formData.latitude != null && formData.longitude != null
+                ? { lat: formData.latitude, lng: formData.longitude }
+                : null
+            }
+            onChange={handleLocationChange}
+            height="220px"
+          />
+          <p className="text-xs text-gray-500 mt-1.5 text-right">
+            الصق رابط مشاركة من Google Maps، أو استخدم موقعك الحالي، أو انقر على الخريطة
+          </p>
         </div>
 
         {/* Number of Rooms with +/- controls */}
