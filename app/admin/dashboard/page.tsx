@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useAdminAuthStore } from '../../../store/adminAuthStore';
 import ds from '../../../styles/adminDesignSystem';
 import { API_BASE_URL } from '@/lib/config';
@@ -37,6 +38,9 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
 
   const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([]);
+  const [pendingPropertyListings, setPendingPropertyListings] = useState<any[]>([]);
+  const [pendingApplianceListings, setPendingApplianceListings] = useState<any[]>([]);
+  const [pendingApprovalDeviceListings, setPendingApprovalDeviceListings] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -109,6 +113,34 @@ export default function DashboardPage() {
         if (activitiesResponse.ok) {
           const activitiesData = await activitiesResponse.json();
           setRecentActivities(activitiesData);
+        }
+
+        // Pending advertisements (property + device listings awaiting payment; device listings awaiting approval)
+        const [propListRes, appListRes, appApprovalRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/admin/properties/listings/pending`, {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: 'no-store',
+          }),
+          fetch(`${API_BASE_URL}/admin/appliances/listings/pending`, {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: 'no-store',
+          }),
+          fetch(`${API_BASE_URL}/admin/appliances/listings/pending-approval`, {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: 'no-store',
+          }),
+        ]);
+        if (propListRes.ok) {
+          const data = await propListRes.json();
+          setPendingPropertyListings(Array.isArray(data) ? data : []);
+        }
+        if (appListRes.ok) {
+          const data = await appListRes.json();
+          setPendingApplianceListings(Array.isArray(data) ? data : []);
+        }
+        if (appApprovalRes.ok) {
+          const data = await appApprovalRes.json();
+          setPendingApprovalDeviceListings(Array.isArray(data) ? data : []);
         }
       } catch (error) {
         // Error fetching dashboard data
@@ -373,6 +405,53 @@ export default function DashboardPage() {
           ))
         )}
       </div>
+
+      {/* Pending Advertisements (property + device listings awaiting payment; device ads awaiting approval) */}
+      {(pendingPropertyListings.length > 0 || pendingApplianceListings.length > 0 || pendingApprovalDeviceListings.length > 0) && (
+        <div
+          style={{
+            background: 'rgba(255, 255, 255, 0.8)',
+            backdropFilter: 'blur(20px)',
+            borderRadius: '16px',
+            border: '1px solid rgba(229, 231, 235, 0.5)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.06)',
+            padding: '24px',
+            direction: 'rtl',
+          }}
+        >
+          <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '16px', textAlign: 'right' }}>
+            إعلانات بانتظار الدفع / الاعتماد
+          </h2>
+          <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', alignItems: 'center' }}>
+            {pendingPropertyListings.length > 0 && (
+              <div>
+                <span style={{ fontWeight: 600 }}>عقارات (بانتظار الدفع): </span>
+                <span>{pendingPropertyListings.length} إعلان</span>
+              </div>
+            )}
+            {pendingApplianceListings.length > 0 && (
+              <div>
+                <span style={{ fontWeight: 600 }}>أجهزة (بانتظار الدفع): </span>
+                <span>{pendingApplianceListings.length} إعلان</span>
+              </div>
+            )}
+            {pendingApprovalDeviceListings.length > 0 && (
+              <div>
+                <span style={{ fontWeight: 600 }}>أجهزة (مدفوعة بانتظار الاعتماد): </span>
+                <Link
+                  href="/admin/device-ads"
+                  style={{ color: '#2563EB', fontWeight: 600, textDecoration: 'underline' }}
+                >
+                  {pendingApprovalDeviceListings.length} إعلان — اعتماد
+                </Link>
+              </div>
+            )}
+          </div>
+          <p style={{ fontSize: '13px', color: '#6B7280', marginTop: '8px', textAlign: 'right' }}>
+            إعلانات العقارات والأجهزة بانتظار الدفع. إعلانات الأجهزة المدفوعة تظهر في قائمة الأجهزة فقط بعد اعتمادها من لوحة «اعتماد إعلانات الأجهزة».
+          </p>
+        </div>
+      )}
 
       {/* First Row: Activities and Revenue Chart */}
       <div style={{

@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Appliance, getApplianceTypeLabel } from '@/services/appliancesService';
+import { getUploadImageUrl } from '@/lib/config';
 
 interface ApplianceCardProps {
   appliance: Appliance;
@@ -10,6 +11,7 @@ interface ApplianceCardProps {
 
 export function ApplianceCard({ appliance }: ApplianceCardProps) {
   const router = useRouter();
+  const imageSrc = getUploadImageUrl(appliance.images?.[0]) || '/images/placeholder-appliance.jpg';
 
   return (
     <div
@@ -19,10 +21,11 @@ export function ApplianceCard({ appliance }: ApplianceCardProps) {
       {/* Image */}
       <div className="relative h-48 bg-gray-100">
         <Image
-          src={appliance.images[0] || '/images/placeholder-appliance.jpg'}
+          src={imageSrc}
           alt={appliance.nameAr}
           fill
           className="object-cover"
+          sizes="(max-width: 768px) 50vw, 300px"
         />
         {/* Badge */}
         <div className="absolute top-3 left-3 bg-black text-white px-3 py-1 rounded-full text-xs font-medium">

@@ -24,6 +24,7 @@ export function BottomNavWrapper() {
     pathname?.startsWith('/phone-verification') ||
     pathname?.startsWith('/verify-otp') ||
     pathname?.startsWith('/add-property') ||
+    pathname?.startsWith('/add-device') ||
     pathname?.startsWith('/contract') ||
     pathname?.startsWith('/services/') ||
     pathname?.startsWith('/offers') ||

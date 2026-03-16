@@ -8,6 +8,7 @@ import {
   getApplianceById,
   incrementApplianceView,
 } from '@/services/appliancesService';
+import { getUploadImageUrl } from '@/lib/config';
 import { ApplianceDetailsSkeleton } from '@/components/ui/ApplianceDetailsSkeleton';
 import { FadeIn } from '@/components/ui/FadeIn';
 import RoleGuard from '@/components/auth/RoleGuard';
@@ -74,11 +75,12 @@ export default function ApplianceDetailsPage() {
         {/* Image */}
         <div className="relative h-[277px] mb-4 mx-5">
           <Image
-            src={appliance.images[0] || '/images/placeholder-appliance.jpg'}
+            src={getUploadImageUrl(appliance.images?.[0]) || '/images/placeholder-appliance.jpg'}
             alt={appliance.nameAr}
             fill
             className="object-cover rounded-lg"
             priority
+            sizes="(max-width: 768px) 100vw, 400px"
           />
         </div>
 

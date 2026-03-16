@@ -164,6 +164,71 @@ export function getRentalDurationLabel(duration: string): string {
   }
 }
 
+// Create appliance (user advertisement - requires auth)
+export async function createAppliance(
+  data: {
+    nameEn: string;
+    nameAr: string;
+    applianceType: string;
+    brand: string;
+    model?: string;
+    color?: string;
+    descriptionEn: string;
+    descriptionAr: string;
+    images?: string[];
+    rentalPrices: { oneMonth: number; sixMonths: number; oneYear: number };
+    deposit?: number;
+    minRentalMonths?: number;
+    maxRentalMonths?: number;
+    ownerId?: string;
+  },
+  token: string
+) {
+  const response = await fetch(`${API_URL}/appliances`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.message || 'Failed to create appliance');
+  }
+  return response.json();
+}
+
+// Appliance listing (advertisement) - create and fees
+export async function createApplianceListing(
+  data: { applianceId: string; adDuration: string; evaluationFee?: number; displayFee?: number; totalCost?: number },
+  token: string
+) {
+  const response = await fetch(`${API_URL}/appliance-listings`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.message || 'Failed to create listing');
+  }
+  return response.json();
+}
+
+export async function calculateApplianceListingFee(adDuration: string) {
+  const response = await fetch(`${API_URL}/appliance-listings/calculate-fee`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ adDuration }),
+  });
+  if (!response.ok) throw new Error('Failed to calculate fee');
+  return response.json();
+}
+
 // Helper function to get appliance type label in Arabic
 export function getApplianceTypeLabel(type: string): string {
   switch (type) {

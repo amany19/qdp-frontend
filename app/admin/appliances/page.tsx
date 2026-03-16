@@ -7,6 +7,7 @@ import { GlassButton } from '../components/ui/GlassButton';
 import { GlassInput } from '../components/ui/GlassInput';
 import { GlassChip } from '../components/ui/GlassChip';
 import { adminAppliancesService, Appliance, ApplianceRental } from '../../../services/adminAppliancesService';
+import { getUploadImageUrl } from '@/lib/config';
 import toast from 'react-hot-toast';
 
 export default function AppliancesPage() {
@@ -574,7 +575,7 @@ export default function AppliancesPage() {
                     >
                       <td style={{ padding: '16px' }}>
                         <img
-                          src={appliance.images?.[0] || '/images/placeholder.png'}
+                          src={getUploadImageUrl(appliance.images?.[0]) || '/images/placeholder.png'}
                           alt={appliance.nameAr}
                           style={{
                             width: '60px',

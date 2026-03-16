@@ -10,6 +10,7 @@ import {
   CreateBookingDto,
   getRentalDurationLabel,
 } from '@/services/appliancesService';
+import { getUploadImageUrl } from '@/lib/config';
 import { useAuthStore } from '@/store/authStore';
 import { CalendarPicker } from '@/components/ui/CalendarPicker';
 import SuccessPopup from '@/components/ui/SuccessPopup';
@@ -120,10 +121,11 @@ export default function BookAppliancePage() {
           <div className="flex items-center gap-4">
             <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
               <Image
-                src={appliance.images[0] || '/images/placeholder-appliance.jpg'}
+                src={getUploadImageUrl(appliance.images?.[0]) || '/images/placeholder-appliance.jpg'}
                 alt={appliance.nameAr}
                 fill
                 className="object-cover"
+                sizes="96px"
               />
             </div>
             <div className="flex-1">

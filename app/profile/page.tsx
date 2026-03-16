@@ -16,6 +16,7 @@ import HeaderCard from '@/components/ui/HeaderCard';
 
 // Import types
 import { UserProfile, Contract, PropertyListing, TabType } from '@/types/profile';
+import type { ApplianceListingItem } from '@/types/profile';
 import AccountTab from './components/tabs/AccountTab';
 import UnitsTab from './components/tabs/UnitsTab';
 import AdsTab from './components/tabs/AdsTab';
@@ -28,6 +29,7 @@ export default function ProfilePage() {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [bookings, setBookings] = useState<Array<{ _id: string; contractId?: { _id: string }; installments?: Array<{ status: string }> }>>([]);
   const [myAds, setMyAds] = useState<PropertyListing[]>([]);
+  const [deviceAds, setDeviceAds] = useState<ApplianceListingItem[]>([]);
   const [loading, setLoading] = useState(false);
 
   // Get user from auth store
@@ -101,17 +103,28 @@ export default function ProfilePage() {
   const loadMyAds = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/properties/my-listings`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setMyAds(data);
+      const token = localStorage.getItem('accessToken');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const [propertiesRes, deviceRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/listings/my-listings`, { headers, cache: 'no-store' }),
+        fetch(`${API_BASE_URL}/appliance-listings/my-listings`, { headers, cache: 'no-store' }),
+      ]);
+      if (propertiesRes.ok) {
+        const data = await propertiesRes.json();
+        setMyAds(Array.isArray(data) ? data : []);
+      } else {
+        setMyAds([]);
+      }
+      if (deviceRes.ok) {
+        const data = await deviceRes.json();
+        setDeviceAds(Array.isArray(data) ? data : []);
+      } else {
+        setDeviceAds([]);
       }
     } catch (error) {
       console.error('Failed to load my ads:', error);
+      setMyAds([]);
+      setDeviceAds([]);
     } finally {
       setLoading(false);
     }
@@ -251,7 +264,7 @@ export default function ProfilePage() {
           )}
 
           {settings.showMyAdsTab && userType !== 'resident' && activeTab === 'ads' && (
-            <AdsTab ads={myAds} loading={loading} />
+            <AdsTab ads={myAds} deviceAds={deviceAds} loading={loading} />
           )}
         </div>
       </div>

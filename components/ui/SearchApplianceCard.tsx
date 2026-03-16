@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Appliance } from '@/services/appliancesService';
+import { getUploadImageUrl } from '@/lib/config';
 
 interface SearchApplianceCardProps {
   appliance: Appliance;
@@ -10,6 +11,7 @@ interface SearchApplianceCardProps {
 
 export function SearchApplianceCard({ appliance }: SearchApplianceCardProps) {
   const router = useRouter();
+  const imageSrc = getUploadImageUrl(appliance.images?.[0]) || '/images/placeholder-appliance.jpg';
 
   return (
     <div
@@ -19,10 +21,11 @@ export function SearchApplianceCard({ appliance }: SearchApplianceCardProps) {
       {/* Appliance Image - fixed height */}
       <div className="relative h-36 flex-shrink-0 bg-gray-50">
         <Image
-          src={appliance.images?.[0] || '/images/placeholder-appliance.jpg'}
+          src={imageSrc}
           alt={appliance.nameAr ?? ''}
           fill
           className="object-cover"
+          sizes="(max-width: 768px) 50vw, 200px"
         />
       </div>
 

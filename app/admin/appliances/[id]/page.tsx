@@ -6,6 +6,7 @@ import { GlassCard } from '../../components/ui/GlassCard';
 import { GlassButton } from '../../components/ui/GlassButton';
 import { GlassChip } from '../../components/ui/GlassChip';
 import { adminAppliancesService, Appliance } from '../../../../services/adminAppliancesService';
+import { getUploadImageUrl } from '@/lib/config';
 import toast from 'react-hot-toast';
 
 export default function ApplianceDetailsPage() {
@@ -194,7 +195,7 @@ export default function ApplianceDetailsPage() {
               {appliance.images.map((image, index) => (
                 <img
                   key={index}
-                  src={image}
+                  src={getUploadImageUrl(image)}
                   alt={`${appliance.nameAr} - ${index + 1}`}
                   style={{
                     width: '100%',

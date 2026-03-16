@@ -3,7 +3,7 @@ import { api } from './api';
 export interface ProcessPaymentDTO {
   amount: number;
   paymentMethod: 'mastercard' | 'visa' | 'apple_pay' | 'google_pay' | 'paypal' | 'card';
-  paymentType: 'listing' | 'booking' | 'appliance_rental' | 'service' | 'contract' | 'installment';
+  paymentType: 'listing' | 'booking' | 'appliance_rental' | 'service' | 'contract' | 'installment' | 'appliance_listing';
   referenceId: string; // ID of the contract, listing, booking, or service
   /** Required when paymentType is 'installment' (bookingId = referenceId) */
   installmentNumber?: number;

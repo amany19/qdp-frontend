@@ -44,8 +44,10 @@ export function BottomNavigationPlus({
   const handlePlusClick = () => {
     if (onPlusClick) {
       onPlusClick();
+    } else if (pathname === '/appliances' || pathname?.startsWith('/appliances/')) {
+      router.push('/add-device');
     } else {
-      router.push('/add-property'); // Default navigation
+      router.push('/add-property'); // Properties page or default
     }
   };
 

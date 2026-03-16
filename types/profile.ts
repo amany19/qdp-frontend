@@ -49,4 +49,24 @@ export interface PropertyListing {
   createdAt: string;
 }
 
+/** Appliance listing (device ad) as returned from GET /appliance-listings/my-listings (applianceId populated) */
+export interface ApplianceListingItem {
+  _id: string;
+  status: string;
+  adDuration: string;
+  totalCost: number;
+  isPaid: boolean;
+  publishedAt?: string;
+  expiresAt?: string;
+  applianceId: {
+    _id: string;
+    nameAr: string;
+    nameEn?: string;
+    applianceType?: string;
+    brand?: string;
+    images?: string[];
+    rentalPrices?: { oneMonth: number; sixMonths: number; oneYear: number };
+  };
+}
+
 export type TabType = 'account' | 'units' | 'ads' | 'offers' | 'appointments';
