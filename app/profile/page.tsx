@@ -26,6 +26,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>('account');
   const [contracts, setContracts] = useState<Contract[]>([]);
+  const [bookings, setBookings] = useState<Array<{ _id: string; contractId?: { _id: string }; installments?: Array<{ status: string }> }>>([]);
   const [myAds, setMyAds] = useState<PropertyListing[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -58,10 +59,32 @@ export default function ProfilePage() {
     if (activeTab === 'units' || contracts.length === 0) {
       loadContracts();
     }
+    if (activeTab === 'units') {
+      loadBookings();
+    }
     if (settings.showMyAdsTab && userType !== 'resident' && activeTab === 'ads') {
       loadMyAds();
     }
   }, [activeTab, isAuthenticated, router]);
+
+  const loadBookings = async () => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) return;
+      const response = await fetch(`${API_BASE_URL}/user/bookings`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setBookings(Array.isArray(data) ? data : []);
+      } else {
+        setBookings([]);
+      }
+    } catch {
+      setBookings([]);
+    }
+  };
 
   const loadContracts = async () => {
     try {
@@ -211,7 +234,12 @@ export default function ProfilePage() {
           )}
           
           {activeTab === 'units' && (
-            <UnitsTab contracts={contracts} loading={loading} userType={userType} />
+            <UnitsTab
+              contracts={contracts}
+              bookings={bookings}
+              loading={loading}
+              userType={userType}
+            />
           )}
 
           {activeTab === 'appointments' && (

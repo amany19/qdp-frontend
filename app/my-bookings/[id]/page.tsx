@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
 import { useAuthStore } from '../../../store/authStore';
 import { BottomNavigation } from '@/components/ui/BottomNavigation';
 import HeaderCard from '@/components/ui/HeaderCard';
 import { API_BASE_URL } from '@/lib/config';
+import toast from 'react-hot-toast';
+import { paymentService } from '@/services/paymentService';
 
 interface PropertyBooking {
   _id: string;
@@ -48,10 +50,12 @@ export default function BookingDetailsPage() {
   const isResident = userType === 'resident';
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const bookingId = params.id as string;
 
   const [loading, setLoading] = useState(true);
   const [booking, setBooking] = useState<PropertyBooking | null>(null);
+  const [bookingPayments, setBookingPayments] = useState<Array<{ _id: string; amount: number; status: string; createdAt: string }>>([]);
 
   useEffect(() => {
     if (token && bookingId) {
@@ -61,6 +65,28 @@ export default function BookingDetailsPage() {
     }
   }, [token, bookingId, router]);
 
+  useEffect(() => {
+    if (!bookingId || !token) return;
+    const onFocus = () => fetchBookingDetails();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [bookingId, token]);
+
+  useEffect(() => {
+    if (!bookingId || !booking) return;
+    paymentService.getByBooking(bookingId).then(setBookingPayments).catch(() => setBookingPayments([]));
+  }, [bookingId, booking?._id]);
+
+  const paidParam = searchParams.get('paid');
+  useEffect(() => {
+    if (paidParam === '1' && booking && !loading) {
+      toast.success('تم تحديث حالة الدفع');
+      const tid = setTimeout(() => fetchBookingDetails(), 500);
+      router.replace(`/my-bookings/${bookingId}`, { scroll: false });
+      return () => clearTimeout(tid);
+    }
+  }, [paidParam, booking, loading, bookingId, router]);
+
   const fetchBookingDetails = async () => {
     try {
       setLoading(true);
@@ -68,6 +94,7 @@ export default function BookingDetailsPage() {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
+        cache: 'no-store',
       });
 
       if (response.ok) {
@@ -229,6 +256,22 @@ export default function BookingDetailsPage() {
                 </div>
               </div>
             )}
+
+            {booking.bookingType === 'rent' && bookingPayments.length > 0 && (
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">سجل المدفوعات (من جدول المدفوعات)</h3>
+                <ul className="space-y-2">
+                  {bookingPayments.map((p) => (
+                    <li key={p._id} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+                      <span className="text-gray-600">
+                        {new Date(p.createdAt).toLocaleDateString('ar-QA')} — {p.amount.toLocaleString()} ر.ق
+                      </span>
+                      <span className="text-green-600 font-medium">مكتمل</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
           {/* Booking Summary */}
@@ -328,12 +371,33 @@ export default function BookingDetailsPage() {
 
             {/* Actions */}
             {booking.status === 'approved' || booking.status === 'active' ? (
-              <button
-                onClick={() => router.push(`/property/${booking.propertyId._id}`)}
-                className="w-full px-4 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
-              >
-                عرض العقار
-              </button>
+              <div className="space-y-3">
+                {booking.bookingType === 'rent' &&
+                  (() => {
+                    const unpaid = booking.installments?.filter(
+                      (i) => i.status !== 'paid' && i.status !== 'cancelled'
+                    ) ?? [];
+                    return unpaid.length > 0 ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          router.push(
+                            `/contract/pay-rent/method?bookingId=${booking._id}${unpaid[0] ? `&installmentNumber=${unpaid[0].installmentNumber}` : ''}`
+                          )
+                        }
+                        className="w-full px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+                      >
+                        دفع الإيجار الشهري (القسط المعلق)
+                      </button>
+                    ) : null;
+                  })()}
+                <button
+                  onClick={() => router.push(`/property/${booking.propertyId._id}`)}
+                  className="w-full px-4 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+                >
+                  عرض العقار
+                </button>
+              </div>
             ) : null}
           </div>
         </div>

@@ -61,6 +61,7 @@ export default function MyBookingsPage() {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
+        cache: 'no-store',
       });
 
       if (response.ok) {

@@ -49,47 +49,71 @@ export default function AdminInstallmentsPage() {
   }, [token]);
 
   useEffect(() => {
+    if (!token) return;
+    const onFocus = () => fetchAllInstallments();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [token]);
+
+  useEffect(() => {
     applyFilters();
   }, [installments, statusFilter, searchQuery]);
 
   const fetchAllInstallments = async () => {
+    if (!token) return;
     try {
       setLoading(true);
-      // Fetch all approved rent bookings with installments
-      const response = await fetch(`${API_BASE_URL}/admin/properties/bookings/all?bookingType=rent&status=approved`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
+      // Fetch approved and active rent bookings (same source as resident payment flow)
+      const [resApproved, resActive] = await Promise.all([
+        fetch(
+          `${API_BASE_URL}/admin/properties/bookings/all?bookingType=rent&status=approved&limit=500`,
+          { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' }
+        ),
+        fetch(
+          `${API_BASE_URL}/admin/properties/bookings/all?bookingType=rent&status=active&limit=500`,
+          { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' }
+        ),
+      ]);
+
+      const toBookings = (res: Response) => {
+        if (!res.ok) return [];
+        return res.json().then((result: any) => {
+          const data = result.data ?? result;
+          return Array.isArray(data) ? data : [];
+        });
+      };
+
+      const [bookingsApproved, bookingsActive] = await Promise.all([
+        toBookings(resApproved),
+        toBookings(resActive),
+      ]);
+
+      // Merge and dedupe by booking _id (in case backend returns same in both)
+      const seen = new Set<string>();
+      const bookings: any[] = [];
+      for (const b of [...bookingsApproved, ...bookingsActive]) {
+        const id = b._id?.toString?.() ?? b._id;
+        if (id && !seen.has(id)) {
+          seen.add(id);
+          bookings.push(b);
+        }
+      }
+
+      const allInstallments: InstallmentWithDetails[] = [];
+      bookings.forEach((booking: any) => {
+        if (booking.installments && booking.installments.length > 0) {
+          booking.installments.forEach((inst: any) => {
+            allInstallments.push({
+              ...inst,
+              bookingId: booking._id,
+              userId: booking.userId,
+              propertyId: booking.propertyId,
+            });
+          });
+        }
       });
 
-      if (response.ok) {
-        const result = await response.json();
-
-        // Backend may return {data: [...], pagination: {...}} or flat array
-        const bookings = result.data || result;
-
-        // Ensure bookings is an array
-        const bookingsArray = Array.isArray(bookings) ? bookings : [];
-
-        // Flatten all installments from all bookings
-        const allInstallments: InstallmentWithDetails[] = [];
-        bookingsArray.forEach((booking: any) => {
-          if (booking.installments && booking.installments.length > 0) {
-            booking.installments.forEach((inst: any) => {
-              allInstallments.push({
-                ...inst,
-                bookingId: booking._id,
-                userId: booking.userId,
-                propertyId: booking.propertyId,
-              });
-            });
-          }
-        });
-
-        setInstallments(allInstallments);
-      } else {
-        setInstallments([]);
-      }
+      setInstallments(allInstallments);
     } catch (error) {
       console.error('Error fetching installments:', error);
       setInstallments([]);
@@ -201,11 +225,23 @@ export default function AdminInstallmentsPage() {
   return (
     <div className="min-h-screen p-8" style={{ background: 'linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%)' }} dir="rtl">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2" style={{ color: ds.colors.primary.black }}>
-          لوحة الأقساط الشهرية
-        </h1>
-        <p className="text-gray-600">إدارة جميع الأقساط الشهرية لعقود الإيجار</p>
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold mb-2" style={{ color: ds.colors.primary.black }}>
+            لوحة الأقساط الشهرية
+          </h1>
+          <p className="text-gray-600">
+            إدارة جميع الأقساط الشهرية لعقود الإيجار. الحالة «مدفوع» تشمل الدفع من التطبيق ومن لوحة الإدارة.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => fetchAllInstallments()}
+          disabled={loading}
+          className="px-4 py-2 rounded-lg font-medium bg-gray-900 text-white hover:bg-gray-800 disabled:opacity-50 transition-colors"
+        >
+          {loading ? 'جاري التحديث...' : 'تحديث القائمة'}
+        </button>
       </div>
 
       {/* Stats Summary */}

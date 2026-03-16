@@ -3,8 +3,10 @@ import { api } from './api';
 export interface ProcessPaymentDTO {
   amount: number;
   paymentMethod: 'mastercard' | 'visa' | 'apple_pay' | 'google_pay' | 'paypal' | 'card';
-  paymentType: 'listing' | 'booking' | 'appliance_rental' | 'service' | 'contract';
+  paymentType: 'listing' | 'booking' | 'appliance_rental' | 'service' | 'contract' | 'installment';
   referenceId: string; // ID of the contract, listing, booking, or service
+  /** Required when paymentType is 'installment' (bookingId = referenceId) */
+  installmentNumber?: number;
   promoCode?: string;
   insuranceFee?: number;
   cardDetails?: {
@@ -79,6 +81,14 @@ export const paymentService = {
    */
   getMyPayments: async (filters?: Record<string, string | number>): Promise<Payment[]> => {
     const response = await api.get('/payments/my-payments', { params: filters });
+    return response.data;
+  },
+
+  /**
+   * Get payments from the Payment table for a booking (installment payments).
+   */
+  getByBooking: async (bookingId: string): Promise<Payment[]> => {
+    const response = await api.get(`/payments/by-booking/${bookingId}`);
     return response.data;
   },
 

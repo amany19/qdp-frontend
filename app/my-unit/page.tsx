@@ -88,6 +88,7 @@ export default function MyUnitPage() {
         contractService.getMyContracts(),
         fetch(`${API_BASE_URL}/user/bookings`, {
           headers: { Authorization: `Bearer ${token}` },
+          cache: 'no-store',
         }),
       ]);
       setContracts(contractsData || []);
@@ -254,8 +255,12 @@ export default function MyUnitPage() {
             paymentDueDays={15}
             userType="resident"
             remainingBalance={remainingBalance > 0 ? remainingBalance : undefined}
-            payNowHref={propertyIdForNearby && activeContract?._id ? `/property/${propertyIdForNearby}/booking/checkout?contractId=${activeContract._id}` : undefined}
-            payNowDisabled={!propertyIdForNearby || !activeContract?._id}
+            payNowHref={
+              bookingForContract?._id && remainingBalance > 0
+                ? `/contract/pay-rent/method?bookingId=${bookingForContract._id}`
+                : undefined
+            }
+            payNowDisabled={!bookingForContract?._id || remainingBalance <= 0}
             className="w-full"
           />
 
@@ -324,6 +329,21 @@ export default function MyUnitPage() {
             )}
           </div>
         </div>
+
+        {/* Owner monthly installment (sale / ownership contract) */}
+        {activeContract.contractType === 'sale' && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col gap-3" dir="rtl">
+            <h3 className="text-base font-bold text-gray-900">القسط الشهري لمالك العقار</h3>
+            <p className="text-sm text-gray-600">دفع القسط الشهري حسب عقد الملكية.</p>
+            <button
+              type="button"
+              onClick={() => router.push(`/contract/pay-installment/method?contractId=${activeContract._id}`)}
+              className="w-full py-2.5 text-sm font-medium text-white bg-gray-900 rounded-xl hover:bg-gray-800"
+            >
+              دفع القسط الشهري
+            </button>
+          </div>
+        )}
 
         {/* Transfer / replacement requests — shown by case: tenant (rent) vs owner (sale) */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col gap-3" dir="rtl">

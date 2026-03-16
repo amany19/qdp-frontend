@@ -8,13 +8,20 @@ import ContractReminderCard from '../ContractReminderCard';
 import UnitFeaturesStrip from '@/components/ui/UnitFeaturesStrip';
 import CommitmentRewardCard from '@/components/ui/CommitmentRewardCard';
 
+interface BookingForUnits {
+  _id: string;
+  contractId?: { _id: string };
+  installments?: Array<{ status: string }>;
+}
+
 interface UnitsTabProps {
   contracts: Contract[];
+  bookings?: BookingForUnits[];
   loading: boolean;
   userType?: string;
 }
 
-export default function UnitsTab({ contracts, loading, userType }: UnitsTabProps) {
+export default function UnitsTab({ contracts, loading, userType, bookings = [] }: UnitsTabProps) {
   const router = useRouter();
   const isResident = userType === 'resident';
 
@@ -58,9 +65,13 @@ export default function UnitsTab({ contracts, loading, userType }: UnitsTabProps
     : 30;
   const showWarning = daysUntilExpiry <= 30 && contract.contractType === 'rent';
 
-  // Mock payment data (TODO: Get from payments API)
-  const paymentsOnTime = 5;
-  const totalPayments = 6;
+  const contractIdStr = contract._id;
+  const bookingForContract = bookings.find(
+    (b) => (b.contractId && (b.contractId as { _id: string })._id === contractIdStr) || (b.contractId as unknown as string) === contractIdStr
+  );
+  const installments = bookingForContract?.installments || [];
+  const paymentsOnTime = installments.filter((i) => i.status === 'paid').length;
+  const totalPayments = installments.length || (contract.contractType === 'rent' ? 12 : 0);
 
   return (
     <div className="space-y-6">

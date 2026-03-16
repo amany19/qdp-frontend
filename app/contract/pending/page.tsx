@@ -135,14 +135,14 @@ export default function ContractPendingPage() {
                       تم تسجيل توقيعك. بانتظار توقيع المالك فقط.
                     </p>
                     <div className="flex gap-2">
-                      {/* الدفع والمتابعة - commented for now
-                      <button
-                        onClick={() => router.push(`/property/${prop?._id || ''}/booking/checkout?contractId=${contract._id}`)}
-                        className="flex-1 py-2.5 px-4 bg-gray-900 text-white rounded-xl font-medium text-sm"
-                      >
-                        الدفع والمتابعة
-                      </button>
-                      */}
+                      {prop?._id && (
+                        <button
+                          onClick={() => router.push(`/property/${prop._id}/booking/checkout?contractId=${contract._id}`)}
+                          className="flex-1 py-2.5 px-4 bg-gray-900 text-white rounded-xl font-medium text-sm"
+                        >
+                          الدفع والمتابعة
+                        </button>
+                      )}
                       <button
                         onClick={() => router.push('/profile')}
                         className="py-2.5 px-4 border border-gray-200 rounded-xl font-medium text-sm text-gray-700"
